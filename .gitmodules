@@ -1,0 +1,6 @@
+[submodule "frontendproto"]
+	path = frontendproto
+	url = ssh://git@dev.tightvideo.com:22222/frontendproto.git
+[submodule "mitmproxy"]
+	path = mitmproxy
+	url = https://github.com/mitmproxy/mitmproxy.git
