@@ -13,4 +13,4 @@ with open('venv/bin/activate', 'w') as f:
         else:
             f.write(line)
     f.write('export _OLD_VIRTUAL_PYTHONPATH="$PYTHONPATH"\n')
-    f.write('export PYTHONPATH="$VIRTUAL_ENV/lib/python3.6/site-packages:$PYTHONPATH"')
+    f.write('export PYTHONPATH="$VIRTUAL_ENV/lib/python3.6/site-packages:$VIRTUAL_ENV/lib/python3.6/site-packages/proto_py:$PYTHONPATH"')
