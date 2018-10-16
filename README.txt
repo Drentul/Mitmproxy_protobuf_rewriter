@@ -9,7 +9,7 @@ https://github.com/mitmproxy/mitmproxy.git - http proxy with free license
 ssh://git@dev.tightvideo.com:22222/frontendproto.git - protobuf files. Make sure that you have access to this repository!
 
 Clone the repo. Key -r need to pull submodules
-git clone -r ssh://git@dev.tightvideo.com:22222/native-testing-proxy-rewriter.git
+git clone --recursive ssh://git@dev.tightvideo.com:22222/native-testing-proxy-rewriter.git
 
 Run setup
 ---------

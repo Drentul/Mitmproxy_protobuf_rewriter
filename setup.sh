@@ -1,6 +1,18 @@
 #!/bin/bash
 
+IsLibInstalled()
+{
+which $1 >/dev/null
+if ! [ "$?" = "0" ] ; then
+    read -n 1 -p "(Please install $1 in your system. Press any key to exit.)"
+    exit 1
+fi
+}
+
 echo "Running setup virtual environment"
+
+IsLibInstalled "python3"
+IsLibInstalled "protoc"
 
 cd mitmproxy
 . dev.sh
@@ -12,7 +24,7 @@ pip3 install -r ../requirements.txt
 sed -i -e 's/^deactivate () {$/deactivate () {\n if [ -n "${_OLD_VIRTUAL_PYTHONPATH:-}" ] ;\n    then PYTHONPATH="${_OLD_VIRTUAL_PYTHONPATH:-}"\n    export PYTHONPATH\n    unset _OLD_VIRTUAL_PYTHONPATH\n fi/' $VIRTUAL_ENV/bin/activate
 
 echo 'export _OLD_VIRTUAL_PYTHONPATH="$PYTHONPATH"
-export PYTHONPATH="$VIRTUAL_ENV/lib/python3.6/site-packages/proto_py:$PYTHONPATH"' >> $VIRTUAL_ENV/bin/activate
+export PYTHONPATH="$VIRTUAL_ENV/lib/python3.6/site-packages:$PYTHONPATH"' >> $VIRTUAL_ENV/bin/activate
 
 export PYTHON_PROTO_PATH="$VIRTUAL_ENV/lib/python3.6/site-packages/proto_py"
 
@@ -20,3 +32,11 @@ cd ../frontendproto
 
 mkdir -p $PYTHON_PROTO_PATH
 protoc --proto_path . --python_out=$PYTHON_PROTO_PATH $(find .  -type f -name '*.proto')
+
+set -
+
+echo "Installation is finished"
+echo "Now you can start working with mitmpoxy and rewrite addon usind '. run_mitm.sh'"
+
+read -n 1 -p "Press any key to exit"
+exit 1
