@@ -5,7 +5,7 @@ IsLibInstalled()
 which $1 >/dev/null
 if ! [ "$?" = "0" ] ; then
     read -n 1 -p "(Please install $1 in your system. Press any key to exit.)"
-    exit 1
+    return
 fi
 }
 
@@ -35,4 +35,4 @@ echo "Installation is finished"
 echo "Now you can start working with mitmpoxy and rewrite addon usind '. run_mitm.sh'"
 
 read -n 1 -p "Press any key to exit"
-exit 1
+return
