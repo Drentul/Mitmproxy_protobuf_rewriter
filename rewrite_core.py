@@ -23,9 +23,17 @@ from urllib.parse import urlparse
 from google.protobuf import json_format
 from proto_py import general_pb2
 from proto_py import accounts_pb2
+from proto_py import user_pb2
+from proto_py import message_pb2
+from proto_py import epg_pb2
+from proto_py import recommendations_pb2
+from proto_py import playback_pb2
+from proto_py import purchases_pb2
 from mitmproxy import http
 #from mitmproxy import ctx
 
+#TODO: Используемые '.*' дают результат от 0 до дофига символов,
+#так что там может секция выпадать при определенном синтаксисе
 API_MAP = [
     {
         "path":"/app-info",
@@ -36,6 +44,66 @@ API_MAP = [
         "path":"/v2/account",
         "method":"GET",
         "proto_type":accounts_pb2.Account()
+    },
+    {
+        "path":"/login",
+        "method":"POST",
+        "proto_type":user_pb2.User()
+    },
+    {
+        "path":"/login/qr",
+        "method":"GET",
+        "proto_type":user_pb2.User()
+    },
+    {
+        "path":"/logout",
+        "method":"GET",
+        "proto_type":message_pb2.Message()
+    },
+    {
+        "path":"/account/change-profile",
+        "method":"GET",
+        "proto_type":message_pb2.Message()
+    },
+    {
+        "path":"/channels",
+        "method":"GET",
+        "proto_type":epg_pb2.EPG()
+    },
+    {
+        "path":"/walls/0",
+        "method":"GET",
+        "proto_type":recommendations_pb2.MainWall()
+    },
+    {
+        "path":"/walls/1",
+        "method":"GET",
+        "proto_type":recommendations_pb2.PersonalContentWall()
+    },
+    {
+        "path":"/purchase-info",
+        "method":"GET",
+        "proto_type":purchases_pb2.PurchaseInfos()
+    },
+    {
+        "path":"/playback-info/.*",
+        "method":"GET",
+        "proto_type":playback_pb2.LivePlaybackInfo()
+    },
+    {
+        "path":"/channels/.*/programs",
+        "method":"GET",
+        "proto_type":epg_pb2.EPG()
+    },
+    {
+        "path":"/pauses/.*",
+        "method":"GET",
+        "proto_type":playback_pb2.ChannelPauses()
+    },
+    {
+        "path":"/v2/settings/profile/restrictions",
+        "method":"GET",
+        "proto_type":accounts_pb2.ProfileRestrictions()
     }
 ]
 
