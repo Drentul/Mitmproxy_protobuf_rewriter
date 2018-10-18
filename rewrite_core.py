@@ -32,8 +32,6 @@ from proto_py import purchases_pb2
 from mitmproxy import http
 #from mitmproxy import ctx
 
-#TODO: Используемые '.*' дают результат от 0 до дофига символов,
-#так что там может секция выпадать при определенном синтаксисе
 API_MAP = [
     {
         "path":"/app-info",
@@ -157,7 +155,7 @@ class Rewriter:
 
         for rule in self.config_json:
             match_authority = re.match(rule.get('authority_expr', '.*'), url_authority)
-            match_path = re.match('/*' + rule.get('path_expr', '.*') + '$', url_path)
+            match_path = re.match('^/*' + rule.get('path_expr', '.*') + '$', url_path)
             method = rule.get('method', '.*')
             replace_response = rule.get('replace_response', None)
 
@@ -183,7 +181,7 @@ class Rewriter:
                 continue
 
             for api in API_MAP:
-                if not (re.match('/*' + api.get("path", '') + '$', url_path) and\
+                if not (re.match('^/*' + api.get("path", '') + '$', url_path) and\
                     re.match(api.get('method', '.*') + '$', flow.request.method)):
                     continue
                 with open(join(self.working_dir, body)) as json_file:
