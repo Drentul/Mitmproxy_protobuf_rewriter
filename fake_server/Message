@@ -1,0 +1,6 @@
+'''
+message Message {
+	required string status = 1;
+	optional string msg    = 2;
+}
+'''

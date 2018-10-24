@@ -1,0 +1,19 @@
+'''
+message User {
+    required string            id            = 1;
+    required string            email         = 2;
+    optional string            name          = 3;
+    optional messages.Provider provider      = 4;
+    optional string            provider_id   = 5;
+    repeated string            favorites     = 6;
+    repeated string            recent_views  = 7;
+    optional bool              anonymous     = 8;
+    optional string            parent        = 9;
+    optional int32             age_rating    = 10;
+    optional string            username      = 11;
+    optional string            delete_reason = 12;
+    optional string            session       = 13;
+
+    optional string            phone         = 2048;
+}
+'''

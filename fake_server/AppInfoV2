@@ -1,0 +1,21 @@
+'''
+message AppInfoV2 {
+    // general server info
+    required string name          = 1;
+    required string version       = 2;
+    required int64  clientVersion = 3;
+    required string apiVersion    = 4;
+    required string buildTime     = 5;
+
+    // server time
+    required int64 currentTime = 6;
+
+    // dvr
+    required int64 dvrAvailable = 7;
+
+    // GA tracking
+    optional string gaTrackingId       = 8;
+    optional int32  gaSendRate         = 9;
+    optional int32  gaPlayEventTimeout = 10;
+}
+'''

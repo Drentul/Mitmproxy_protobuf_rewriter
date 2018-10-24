@@ -41,7 +41,6 @@ message HttpError {
 	required string msg  = 2;
     optional string message = 3;
 }'''
-#from  mitmproxy.addons 
 import rewrite_core
 
 #Way to files which is used to replace content
