@@ -50,6 +50,18 @@ CONFIG = \
 '''
 [
   {
+   "path_expr": "/static/basic_settings.json",
+   "method": ["GET"],
+   "replace_response": {
+    "body": "basic_settings.json"
+   }
+  }
+]
+'''
+
+'''
+[
+  {
    "path_expr": "/app-info",
    "method": ["GET"],
    "replace_response": {

@@ -21,6 +21,7 @@ import json
 from os.path import join
 from urllib.parse import urlparse
 from google.protobuf import json_format
+from proto_py.vod.v2 import vod_pb2
 from proto_py import general_pb2
 from proto_py import accounts_pb2
 from proto_py import user_pb2
@@ -35,15 +36,25 @@ from mitmproxy import http
 #TODO: Царское туду
 '''
 Надо:
+0) Десериализатор протобуфов!
 1) Пройтись по другой документации api, запустить приложение и чекнуть, что основные запросы покрыты
 2) Дописать по необходимости
 3) Описать реврайт реквеста
 4) Посмотреть насколько удобно делать быстрые подмены - модифицировать хедеры
 5) Проверить как сейчас обстоят дела с подменой строкового контента и допилить в случае необходимости
-6) Установка под винду
 '''
 
 API_MAP = [
+    {
+        "path":"/static/.*.json",
+        "method":"GET",
+        "proto_type":"json"
+    },
+    {
+        "path":"/vod/v2/.*/titles.*",
+        "method":"GET",
+        "proto_type":vod_pb2.VODTitle()
+    },
     {
         "path":"/app-info",
         "method":"GET",
@@ -192,14 +203,19 @@ class Rewriter:
                 continue
 
             for api in API_MAP:
-                if not (re.match('^/*' + api.get("path", '') + '$', url_path) and\
+                if not (re.match('^/*' + api.get('path', '') + '$', url_path) and\
                     re.match(api.get('method', '.*') + '$', flow.request.method)):
                     continue
+
                 with open(join(self.working_dir, body)) as json_file:
+                    if api.get('proto_type') == 'json':
+                        js = json_file.read()
+                        flow.response.text = js
+                        break
                     json_obj = json.load(json_file)
                     camel_json(json_obj)
                     if flow.response.status_code == 200:
-                        rewrite_body_by_json(flow.response, json_obj, api.get("proto_type"))
+                        rewrite_body_by_json(flow.response, json_obj, api.get('proto_type'))
                         break
                     try:
                         rewrite_body_by_json(flow.response, json_obj, general_pb2.HttpFormErrors())
