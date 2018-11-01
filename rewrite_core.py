@@ -48,7 +48,7 @@ API_MAP = [
     {
         "path":"/static/.*.json",
         "method":"GET",
-        "proto_type":"json"
+        "proto_type":"text"
     },
     {
         "path":"/vod/v2/.*/titles.*",
@@ -207,10 +207,10 @@ class Rewriter:
                     re.match(api.get('method', '.*') + '$', flow.request.method)):
                     continue
 
-                with open(join(self.working_dir, body)) as json_file:
-                    if api.get('proto_type') == 'json':
-                        js = json_file.read()
-                        flow.response.text = js
+                with open(join(self.working_dir, body)) as text_file:
+                    if api.get('proto_type') == 'text':
+                        text = text_file.read()
+                        flow.response.text = text
                         break
                     json_obj = json.load(json_file)
                     camel_json(json_obj)
