@@ -203,12 +203,22 @@ class Rewriter:
                     if not os.path.exists(changed_path):
                         break
                     counter = counter + 1
-                try:
+
+                for api in API_MAP:
+                    if not (re.match('^/*' + api.get('path', '') + '$', url_path) and\
+                        re.match(api.get('method', '.*') + '$', flow.request.method)):
+                        continue
+
+                    if api.get('proto_type') == 'text':
+                        content = flow.response.text
+                    else:
+                        msg = api.get('proto_type')
+                        msg.ParseFromString(flow.response.content)
+                        json_obj = json_format.MessageToJson(msg)
+                        content = json_obj.encode().decode("unicode-escape")
+                        
                     with open(changed_path, "w") as save_file:
-                        save_file.write(flow.response.text)
-                except:
-                    with open(changed_path, "wb") as save_file:
-                        save_file.write(flow.response.content)
+                            save_file.write(content)
 
             status_code = rule.get('status_code', None)
             if not status_code in (None, ''):
