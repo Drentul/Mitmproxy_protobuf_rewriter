@@ -16,6 +16,7 @@ dist/
 mitmproxy/contrib/kaitaistruct/*.ksy
 .pytest_cache
 __pycache__
+saves/*
 
 # UI
 
