@@ -18,7 +18,7 @@ GET /v2/settings/profile/restrictions ProfileRestrictions
 
 import re
 import json
-from os.path import join
+import os.path
 from urllib.parse import urlparse
 from google.protobuf import json_format
 from proto_py.vod.v2 import vod_pb2
@@ -31,7 +31,7 @@ from proto_py import recommendations_pb2
 from proto_py import playback_pb2
 from proto_py import purchases_pb2
 from mitmproxy import http
-#from mitmproxy import ctx
+from mitmproxy import ctx
 
 #TODO: Царское туду
 '''
@@ -155,9 +155,10 @@ def rewrite_body_by_json(flow_response_or_request, json_object, message_type) ->
 class Rewriter:
     '''Class for capturing and rewriting some requests and responses'''
 
-    def __init__(self, jsonString: str, working_dir: str):
+    def __init__(self, jsonString: str, saving_dir: str, rewriting_dir: str):
         self.config_json = json.loads(jsonString)
-        self.working_dir = working_dir
+        self.saving_dir = saving_dir
+        self.rewriting_dir = rewriting_dir
 
     def request(self, flow: http.HTTPFlow) -> None:
         '''Method calls when the full HTTP request has been read
@@ -178,28 +179,48 @@ class Rewriter:
         for rule in self.config_json:
             match_authority = re.match(rule.get('authority_expr', '.*'), url_authority)
             match_path = re.match('^/*' + rule.get('path_expr', '.*') + '$', url_path)
-            method = rule.get('method', '.*')
-            replace_response = rule.get('replace_response', None)
+            method = rule.get('method', ["GET", "POST", "PUT", "DELETE"])
 
             if not(\
                 rule.get('is_on', True) and\
                 match_authority and\
                 match_path and\
-                flow.request.method in method and\
-                replace_response != None):
+                flow.request.method in method):
                 continue
+                
+            save_content_path = rule.get('save_content', None)
+            if not save_content_path in (None, ''):
+                full_path = os.path.join(self.saving_dir, save_content_path)
+                ctx.log.info(full_path)
+                directory = os.path.dirname(full_path)
+                ctx.log.info(directory)
+                if not os.path.exists(directory):
+                    os.makedirs(directory)
+                counter = 1
+                file_name, file_extension = os.path.splitext(full_path)
+                while True:
+                    changed_path = file_name + str(counter) + file_extension
+                    if not os.path.exists(changed_path):
+                        break
+                    counter = counter + 1
+                try:
+                    with open(changed_path, "w") as save_file:
+                        save_file.write(flow.response.text)
+                except:
+                    with open(changed_path, "wb") as save_file:
+                        save_file.write(flow.response.content)
 
-            status_code = replace_response.get('status_code', None)
-            if status_code != None:
+            status_code = rule.get('status_code', None)
+            if not status_code in (None, ''):
                 flow.response.status_code = status_code
 
-            headers = replace_response.get('headers', None)
+            headers = rule.get('headers', None)
             if headers != None:
                 for header in headers:
                     flow.response.headers[header] = headers.get(header)
 
-            body = replace_response.get('body', None)
-            if body is None:
+            rewrite_content_path = rule.get('rewrite_content', None)
+            if rewrite_content_path in (None, ''):
                 continue
 
             for api in API_MAP:
@@ -207,12 +228,12 @@ class Rewriter:
                     re.match(api.get('method', '.*') + '$', flow.request.method)):
                     continue
 
-                with open(join(self.working_dir, body)) as text_file:
+                with open(os.path.join(self.rewriting_dir, rewrite_content_path)) as content_file:
                     if api.get('proto_type') == 'text':
-                        text = text_file.read()
+                        text = content_file.read()
                         flow.response.text = text
                         break
-                    json_obj = json.load(json_file)
+                    json_obj = json.load(content_file)
                     camel_json(json_obj)
                     if flow.response.status_code == 200:
                         rewrite_body_by_json(flow.response, json_obj, api.get('proto_type'))
