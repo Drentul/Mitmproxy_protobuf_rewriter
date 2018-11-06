@@ -36,12 +36,10 @@ from mitmproxy import ctx
 #TODO: Царское туду
 '''
 Надо:
-0) Десериализатор протобуфов!
 1) Пройтись по другой документации api, запустить приложение и чекнуть, что основные запросы покрыты
 2) Дописать по необходимости
 3) Описать реврайт реквеста
 4) Посмотреть насколько удобно делать быстрые подмены - модифицировать хедеры
-5) Проверить как сейчас обстоят дела с подменой строкового контента и допилить в случае необходимости
 '''
 
 API_MAP = [
@@ -214,7 +212,7 @@ class Rewriter:
                     else:
                         msg = api.get('proto_type')
                         msg.ParseFromString(flow.response.content)
-                        json_obj = json_format.MessageToJson(msg)
+                        json_obj = json_format.MessageToJson(msg, preserving_proto_field_name=True)
                         content = json_obj.encode().decode("unicode-escape")
                         
                     with open(changed_path, "w") as save_file:
