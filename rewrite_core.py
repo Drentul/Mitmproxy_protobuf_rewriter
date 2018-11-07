@@ -31,18 +31,16 @@ from proto_py import recommendations_pb2
 from proto_py import playback_pb2
 from proto_py import purchases_pb2
 from mitmproxy import http
-from mitmproxy import ctx
+#from mitmproxy import ctx
 
 #TODO: Царское туду
-'''
-Надо:
--1) Полинти коды, сцуко!
-0) Управление временем отдачи реквеста. Для начала хоть как-то. Аддон за этим следит, так что это должно быть возможным
-1) Пройтись по другой документации api, запустить приложение и чекнуть, что основные запросы покрыты
-2) Дописать по необходимости
-3) Описать реврайт реквеста
-4) Посмотреть насколько удобно делать быстрые подмены - модифицировать хедеры
-'''
+#Надо:
+#-1) Полинти коды, сцуко!
+#0) Управление временем отдачи реквеста. Аддон за этим следит, так что это должно быть возможным
+#1) Пройтись по другой документации api, проверить покрытие реальных запросов в приложении
+#2) Дописать по необходимости
+#3) Описать реврайт реквеста
+#4) Посмотреть насколько удобно делать быстрые подмены - модифицировать хедеры
 
 API_MAP = [
     {
@@ -177,23 +175,23 @@ class Rewriter:
         url_path = url.path
 
         for rule in self.config_json:
-            match_authority = re.match(rule.get('authority_expr', '.*'), url_authority)
-            match_path = re.match('^/*' + rule.get('path_expr', '.*') + '$', url_path)
-            method = rule.get('method', ["GET", "POST", "PUT", "DELETE"])
+            is_on = rule.get('is_on', True)
+            is_match_authority = re.match(rule.get('authority_expr', '.*'), url_authority)
+            is_match_path = re.match('^/*' + rule.get('path_expr', '.*') + '$', url_path)
+            is_match_method = flow.request.method in\
+                rule.get('method', ["GET", "POST", "PUT", "DELETE"])
 
             if not(\
-                rule.get('is_on', True) and\
-                match_authority and\
-                match_path and\
-                flow.request.method in method):
+                is_on and\
+                is_match_authority and\
+                is_match_path and\
+                is_match_method):
                 continue
-                
+
             save_content_path = rule.get('save_content', None)
             if not save_content_path in (None, ''):
                 full_path = os.path.join(self.saving_dir, save_content_path)
-                ctx.log.info(full_path)
                 directory = os.path.dirname(full_path)
-                ctx.log.info(directory)
                 if not os.path.exists(directory):
                     os.makedirs(directory)
                 counter = 1
@@ -206,7 +204,7 @@ class Rewriter:
 
                 for api in API_MAP:
                     if not (re.match('^/*' + api.get('path', '') + '$', url_path) and\
-                        re.match(api.get('method', '.*') + '$', flow.request.method)):
+                        re.match(api.get('method', '.*'), flow.request.method)):
                         continue
 
                     if api.get('proto_type') == 'text':
@@ -216,7 +214,7 @@ class Rewriter:
                         msg.ParseFromString(flow.response.content)
                         json_obj = json_format.MessageToJson(msg, preserving_proto_field_name=True)
                         content = json_obj.encode().decode("unicode-escape")
-                        
+
                     with open(changed_path, "w") as save_file:
                         save_file.write(content)
 
@@ -235,7 +233,7 @@ class Rewriter:
 
             for api in API_MAP:
                 if not (re.match('^/*' + api.get('path', '') + '$', url_path) and\
-                    re.match(api.get('method', '.*') + '$', flow.request.method)):
+                    re.match(api.get('method', '.*'), flow.request.method)):
                     continue
 
                 with open(os.path.join(self.rewriting_dir, rewrite_content_path)) as content_file:
