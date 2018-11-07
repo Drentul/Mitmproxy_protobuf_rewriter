@@ -35,7 +35,7 @@ from mitmproxy import http
 
 #TODO: Царское туду
 #Надо:
-#-1) Полинти коды, сцуко!
+#-1) Рефакторинг метода обработки респонза. Нужно улучшить логику выбора месседжа для перезаписи
 #0) Управление временем отдачи реквеста. Аддон за этим следит, так что это должно быть возможным
 #1) Пройтись по другой документации api, проверить покрытие реальных запросов в приложении
 #2) Дописать по необходимости
@@ -150,6 +150,19 @@ def rewrite_body_by_json(flow_response_or_request, json_object, message_type) ->
                     message_type,\
                     ignore_unknown_fields=False).SerializeToString()
 
+def find_api(flow: http.HTTPFlow) -> dict:
+    '''Method searches for API in config, that
+    is match to current request. Then returns this API as dictionary.'''
+
+    url = urlparse(flow.request.pretty_url)
+    url_path = url.path
+
+    for api in API_MAP:
+        if (re.match('^/*' + api.get('path', '') + '$', url_path) and\
+            re.match(api.get('method', '.*'), flow.request.method)):
+            return api
+    return None
+
 class Rewriter:
     '''Class for capturing and rewriting some requests and responses'''
 
@@ -158,7 +171,7 @@ class Rewriter:
         self.saving_dir = saving_dir
         self.rewriting_dir = rewriting_dir
 
-    def find_rule(self, flow: http.HTTPFlow):
+    def find_rule(self, flow: http.HTTPFlow) -> dict:
         '''Method searches for rule in config, that
         is match to current request. Then returns this rule as dictionary.'''
 
@@ -194,16 +207,27 @@ class Rewriter:
         '''Method calls when the full HTTP response has been read
         It searches for the eligible rule in config
         and then replaces response content according to it'''
-        
-        url = urlparse(flow.request.pretty_url)
-        url_path = url.path
 
         rule = self.find_rule(flow)
         if rule is None:
             return
 
+        status_code = rule.get('status_code', None)
+        if not status_code in (None, ''):
+            flow.response.status_code = status_code
+
+        headers = rule.get('headers', None)
+        if headers != None:
+            for header in headers:
+                flow.response.headers[header] = headers.get(header)
+
+        api = find_api(flow)
+
+            #Save block
+
         save_content_path = rule.get('save_content', None)
         if not save_content_path in (None, ''):
+            #Finding free path for saving
             full_path = os.path.join(self.saving_dir, save_content_path)
             directory = os.path.dirname(full_path)
             if not os.path.exists(directory):
@@ -216,52 +240,34 @@ class Rewriter:
                     break
                 counter = counter + 1
 
-            for api in API_MAP:
-                if not (re.match('^/*' + api.get('path', '') + '$', url_path) and\
-                    re.match(api.get('method', '.*'), flow.request.method)):
-                    continue
+            #Saving process
+            if api.get('proto_type') == 'text':
+                content = flow.response.text
+            else:
+                msg = api.get('proto_type')
+                msg.ParseFromString(flow.response.content)
+                json_obj = json_format.MessageToJson(msg, preserving_proto_field_name=True)
+                content = json_obj.encode().decode("unicode-escape")
 
-                if api.get('proto_type') == 'text':
-                    content = flow.response.text
-                else:
-                    msg = api.get('proto_type')
-                    msg.ParseFromString(flow.response.content)
-                    json_obj = json_format.MessageToJson(msg, preserving_proto_field_name=True)
-                    content = json_obj.encode().decode("unicode-escape")
+            with open(changed_path, "w") as save_file:
+                save_file.write(content)
 
-                with open(changed_path, "w") as save_file:
-                    save_file.write(content)
-
-        status_code = rule.get('status_code', None)
-        if not status_code in (None, ''):
-            flow.response.status_code = status_code
-
-        headers = rule.get('headers', None)
-        if headers != None:
-            for header in headers:
-                flow.response.headers[header] = headers.get(header)
+        #Rewrite block
 
         rewrite_content_path = rule.get('rewrite_content', None)
-        if rewrite_content_path in (None, ''):
-            return
-
-        for api in API_MAP:
-            if not (re.match('^/*' + api.get('path', '') + '$', url_path) and\
-                re.match(api.get('method', '.*'), flow.request.method)):
-                continue
-
+        if not rewrite_content_path in (None, ''):
+            #Rewriting process
             with open(os.path.join(self.rewriting_dir, rewrite_content_path)) as content_file:
                 if api.get('proto_type') == 'text':
                     text = content_file.read()
                     flow.response.text = text
-                    break
+                    return
                 json_obj = json.load(content_file)
                 camel_json(json_obj)
                 if flow.response.status_code == 200:
                     rewrite_body_by_json(flow.response, json_obj, api.get('proto_type'))
-                    break
+                    return
                 try:
                     rewrite_body_by_json(flow.response, json_obj, general_pb2.HttpFormErrors())
                 except json_format.ParseError:
                     rewrite_body_by_json(flow.response, json_obj, general_pb2.HttpError())
-            break
