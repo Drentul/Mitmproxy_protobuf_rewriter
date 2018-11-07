@@ -36,6 +36,8 @@ from mitmproxy import ctx
 #TODO: Царское туду
 '''
 Надо:
+-1) Полинти коды, сцуко!
+0) Управление временем отдачи реквеста. Для начала хоть как-то. Аддон за этим следит, так что это должно быть возможным
 1) Пройтись по другой документации api, запустить приложение и чекнуть, что основные запросы покрыты
 2) Дописать по необходимости
 3) Описать реврайт реквеста
@@ -216,7 +218,7 @@ class Rewriter:
                         content = json_obj.encode().decode("unicode-escape")
                         
                     with open(changed_path, "w") as save_file:
-                            save_file.write(content)
+                        save_file.write(content)
 
             status_code = rule.get('status_code', None)
             if not status_code in (None, ''):
