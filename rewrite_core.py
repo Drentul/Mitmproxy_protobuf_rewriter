@@ -150,19 +150,6 @@ def rewrite_body_by_json(flow_response_or_request, json_object, message_type) ->
                     message_type,\
                     ignore_unknown_fields=False).SerializeToString()
 
-def find_api(flow: http.HTTPFlow) -> dict:
-    '''Method searches for API in config, that
-    is match to current request. Then returns this API as dictionary.'''
-
-    url = urlparse(flow.request.pretty_url)
-    url_path = url.path
-
-    for api in API_MAP:
-        if (re.match('^/*' + api.get('path', '') + '$', url_path) and\
-            re.match(api.get('method', '.*'), flow.request.method)):
-            return api
-    return None
-
 class Rewriter:
     '''Class for capturing and rewriting some requests and responses'''
 
@@ -170,6 +157,7 @@ class Rewriter:
         self.config_json = json.loads(jsonString)
         self.saving_dir = saving_dir
         self.rewriting_dir = rewriting_dir
+        self.api_map = API_MAP
 
     def find_rule(self, flow: http.HTTPFlow) -> dict:
         '''Method searches for rule in config, that
@@ -194,6 +182,19 @@ class Rewriter:
                 continue
 
             return rule
+        return None
+
+    def find_api(self, flow: http.HTTPFlow) -> dict:
+        '''Method searches for API in config, that
+        is match to current request. Then returns this API as dictionary.'''
+
+        url = urlparse(flow.request.pretty_url)
+        url_path = url.path
+
+        for api in self.api_map:
+            if (re.match('^/*' + api.get('path', '') + '$', url_path) and\
+                re.match(api.get('method', '.*'), flow.request.method)):
+                return api
         return None
 
     def request(self, flow: http.HTTPFlow) -> None:
@@ -221,7 +222,7 @@ class Rewriter:
             for header in headers:
                 flow.response.headers[header] = headers.get(header)
 
-        api = find_api(flow)
+        api = self.find_api(flow)
 
             #Save block
 
@@ -257,6 +258,8 @@ class Rewriter:
         rewrite_content_path = rule.get('rewrite_content', None)
         if not rewrite_content_path in (None, ''):
             #Rewriting process
+            #TODO: Использовать return неправильно.
+            #Реализовать выбор без этого, избежать вложенности
             with open(os.path.join(self.rewriting_dir, rewrite_content_path)) as content_file:
                 if api.get('proto_type') == 'text':
                     text = content_file.read()
@@ -264,6 +267,7 @@ class Rewriter:
                     return
                 json_obj = json.load(content_file)
                 camel_json(json_obj)
+                #TODO: Как можно свернуть три вызова в один?
                 if flow.response.status_code == 200:
                     rewrite_body_by_json(flow.response, json_obj, api.get('proto_type'))
                     return
