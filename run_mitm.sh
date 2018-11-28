@@ -1,4 +1,4 @@
 #!/bin/bash
 . ./mitmproxy/venv/bin/activate
-mitmproxy -s rewrite.py
+mitmproxy -w last_session -s rewrite.py
 deactivate
