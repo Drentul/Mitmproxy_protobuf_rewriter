@@ -11,6 +11,7 @@ Example:
 [
   {
    "is_on": true,							//OPTIONAL: default: true
+   "delay": 1000,							//OPTIONAL: default: 0 //In progress of developing
    "authority_expr": "fe.smotreshka.tv",	//OPTIONAL: default: any
    "path_expr": "/playback-info",			//OPTIONAL: default: any
    "method": ["GET"],						//OPTIONAL: default: ["GET", "POST", "PUT", "DELETE"]
@@ -31,6 +32,7 @@ FOR COPY & PASTE!
 
   {
    "is_on": true,
+   "delay": 1000,
    "authority_expr": "fe.smotreshka.tv",
    "path_expr": "/playback-info",
    "method": ["GET"],
@@ -75,16 +77,17 @@ CONFIG = \
   {
    "path_expr": "/static/basic_settings.json",
    "method": ["GET"],
-   "save_content": "bsic/basic_settings.json",
-   "rewrite_content": "",
+   "save_content": "",
+   "rewrite_content": "basic_settings.json",
    "status_code": 200,
    "headers": {
    }
   },
   {
-   "path_expr": "/app-info",
+   "delay": 1000,
+   "path_expr": "/playback-info/.*",
    "method": ["GET"],
-   "save_content": "appinfo",
+   "save_content": "pb",
    "rewrite_content": "",
    "status_code": 200,
    "headers": {

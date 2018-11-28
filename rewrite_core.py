@@ -18,7 +18,9 @@ GET /v2/settings/profile/restrictions ProfileRestrictions
 
 import re
 import json
+import time
 import os.path
+from deco import *
 from urllib.parse import urlparse
 from google.protobuf import json_format
 from proto_py.vod.v2 import vod_pb2
@@ -213,6 +215,10 @@ class Rewriter:
         if rule is None:
             return
 
+#        delay = rule.get('delay', None)
+#        if not delay in (None, ''):
+#            time.sleep(delay)
+
         status_code = rule.get('status_code', None)
         if not status_code in (None, ''):
             flow.response.status_code = status_code
@@ -224,7 +230,7 @@ class Rewriter:
 
         api = self.find_api(flow)
 
-            #Save block
+        #Save block
 
         save_content_path = rule.get('save_content', None)
         if not save_content_path in (None, ''):
