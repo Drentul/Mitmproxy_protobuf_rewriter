@@ -20,7 +20,6 @@ import re
 import json
 import time
 import os.path
-from deco import *
 from urllib.parse import urlparse
 from google.protobuf import json_format
 from proto_py.vod.v2 import vod_pb2
@@ -33,7 +32,8 @@ from proto_py import recommendations_pb2
 from proto_py import playback_pb2
 from proto_py import purchases_pb2
 from mitmproxy import http
-#from mitmproxy import ctx
+from mitmproxy.script import concurrent
+from mitmproxy import ctx
 
 #TODO: Царское туду
 #Надо:
@@ -199,12 +199,21 @@ class Rewriter:
                 return api
         return None
 
+    @concurrent
     def request(self, flow: http.HTTPFlow) -> None:
         '''Method calls when the full HTTP request has been read
         It searches for the eligible rule in config
         and then replaces request content according to it'''
 
-        pass
+        rule = self.find_rule(flow)
+        if rule is None:
+            return
+
+        #Bad internet settings: delay, loss
+
+        delay = rule.get('delay', None)
+        if not delay in (None, ''):
+            time.sleep(delay)
 
     def response(self, flow: http.HTTPFlow) -> None:
         '''Method calls when the full HTTP response has been read
@@ -214,10 +223,6 @@ class Rewriter:
         rule = self.find_rule(flow)
         if rule is None:
             return
-
-#        delay = rule.get('delay', None)
-#        if not delay in (None, ''):
-#            time.sleep(delay)
 
         status_code = rule.get('status_code', None)
         if not status_code in (None, ''):
