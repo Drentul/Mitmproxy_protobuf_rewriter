@@ -33,16 +33,13 @@ from proto_py import playback_pb2
 from proto_py import purchases_pb2
 from mitmproxy import http
 from mitmproxy.script import concurrent
-from mitmproxy import ctx
+#from mitmproxy import ctx
 
 #TODO: Царское туду
 #Надо:
-#-1) Рефакторинг метода обработки респонза. Нужно улучшить логику выбора месседжа для перезаписи
-#0) Управление временем отдачи реквеста. Аддон за этим следит, так что это должно быть возможным
+#0) Рефакторинг метода обработки респонза. Нужно улучшить логику выбора месседжа для перезаписи
 #1) Пройтись по другой документации api, проверить покрытие реальных запросов в приложении
 #2) Дописать по необходимости
-#3) Описать реврайт реквеста
-#4) Посмотреть насколько удобно делать быстрые подмены - модифицировать хедеры
 
 API_MAP = [
     {
@@ -143,14 +140,21 @@ def camel_json(json_file) -> None:
         if isinstance(sub_js, (dict, list)):
             camel_json(sub_js)
 
-def rewrite_body_by_json(flow_response_or_request, json_object, message_type) -> None:
+def rewrite_body_by_json(flow_response_or_request, json_object, msg_types) -> None:
     '''Method rewrites content in request or response by
     json encoded to protobuf object of specified type'''
 
-    flow_response_or_request.content = json_format.Parse(\
-                    json.dumps(json_object),\
-                    message_type,\
-                    ignore_unknown_fields=False).SerializeToString()
+    msg = None
+    for msg_type in msg_types:
+        try:
+            msg = json_format.Parse(\
+                json.dumps(json_object),\
+                msg_type,\
+                ignore_unknown_fields=False).SerializeToString()
+            break
+        except json_format.ParseError:
+            continue
+    flow_response_or_request.content = msg
 
 class Rewriter:
     '''Class for capturing and rewriting some requests and responses'''
@@ -278,11 +282,10 @@ class Rewriter:
                     return
                 json_obj = json.load(content_file)
                 camel_json(json_obj)
-                #TODO: Как можно свернуть три вызова в один?
+
                 if flow.response.status_code == 200:
-                    rewrite_body_by_json(flow.response, json_obj, api.get('proto_type'))
-                    return
-                try:
-                    rewrite_body_by_json(flow.response, json_obj, general_pb2.HttpFormErrors())
-                except json_format.ParseError:
-                    rewrite_body_by_json(flow.response, json_obj, general_pb2.HttpError())
+                    msg_types = [api.get('proto_type')]
+                else:
+                    msg_types = [general_pb2.HttpFormErrors(), general_pb2.HttpError()]
+
+                rewrite_body_by_json(flow.response, json_obj, msg_types)
