@@ -273,19 +273,17 @@ class Rewriter:
         rewrite_content_path = rule.get('rewrite_content', None)
         if not rewrite_content_path in (None, ''):
             #Rewriting process
-            #TODO: Использовать return неправильно.
-            #Реализовать выбор без этого, избежать вложенности
             with open(os.path.join(self.rewriting_dir, rewrite_content_path)) as content_file:
                 if api.get('proto_type') == 'text':
                     text = content_file.read()
                     flow.response.text = text
-                    return
-                json_obj = json.load(content_file)
-                camel_json(json_obj)
-
-                if flow.response.status_code == 200:
-                    msg_types = [api.get('proto_type')]
                 else:
-                    msg_types = [general_pb2.HttpFormErrors(), general_pb2.HttpError()]
+                    json_obj = json.load(content_file)
+                    camel_json(json_obj)
 
-                rewrite_body_by_json(flow.response, json_obj, msg_types)
+                    if flow.response.status_code == 200:
+                        msg_types = [api.get('proto_type')]
+                    else:
+                        msg_types = [general_pb2.HttpFormErrors(), general_pb2.HttpError()]
+
+                    rewrite_body_by_json(flow.response, json_obj, msg_types)
