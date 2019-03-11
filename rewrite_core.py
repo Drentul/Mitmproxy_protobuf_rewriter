@@ -23,6 +23,7 @@ import os.path
 from urllib.parse import urlparse
 from google.protobuf import json_format
 from proto_py.vod.v2 import vod_pb2
+from proto_py.pauses.v1 import pauses_pb2
 from proto_py import general_pb2
 from proto_py import accounts_pb2
 from proto_py import user_pb2
@@ -33,11 +34,10 @@ from proto_py import playback_pb2
 from proto_py import purchases_pb2
 from mitmproxy import http
 from mitmproxy.script import concurrent
-#from mitmproxy import ctx
+from mitmproxy import ctx
 
 #TODO: Царское туду
 #Надо:
-#0) Рефакторинг метода обработки респонза. Нужно улучшить логику выбора месседжа для перезаписи
 #1) Пройтись по другой документации api, проверить покрытие реальных запросов в приложении
 #2) Дописать по необходимости
 
@@ -48,9 +48,9 @@ API_MAP = [
         "proto_type":"text"
     },
     {
-        "path":"/vod/v2/.*/titles.*",
-        "method":"GET",
-        "proto_type":vod_pb2.VODTitle()
+        "path":"/contacts-verification/v1/start",
+        "method":"POST",
+        "proto_type":general_pb2.HttpError()
     },
     {
         "path":"/app-info",
@@ -121,6 +121,21 @@ API_MAP = [
         "path":"/v2/settings/profile/restrictions",
         "method":"GET",
         "proto_type":accounts_pb2.ProfileRestrictions()
+    },
+    {
+        "path":"/vod/v2/archive/titles/.*$",
+        "method":"GET",
+        "proto_type":vod_pb2.VODTitle()
+    },
+    {
+        "path":"/pause/vod/v1/titles/archive/.*",
+        "method":"GET",
+        "proto_type":pauses_pb2.VODPauses()
+    },
+    {
+        "path":"/vod/v2/archive/titles/.*/episodes$",
+        "method":"GET",
+        "proto_type":vod_pb2.VODEpisodes()
     }
 ]
 
@@ -137,6 +152,10 @@ def camel_json(json_file) -> None:
         if isinstance(json_file, dict):
             new_key = to_camel_case(key)
             sub_js = json_file[new_key] = json_file.pop(key)
+
+        if isinstance(json_file, list):
+            sub_js = key
+
         if isinstance(sub_js, (dict, list)):
             camel_json(sub_js)
 
