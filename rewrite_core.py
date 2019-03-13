@@ -103,17 +103,17 @@ API_MAP = [
         "proto_type":purchases_pb2.PurchaseInfos()
     },
     {
-        "path":"/playback-info/.*",
+        "path":"/playback-info/[^/]*",
         "method":"GET",
         "proto_type":playback_pb2.LivePlaybackInfo()
     },
     {
-        "path":"/channels/.*/programs",
+        "path":"/channels/[^/]*/programs",
         "method":"GET",
         "proto_type":epg_pb2.EPG()
     },
     {
-        "path":"/pauses/.*",
+        "path":"/pauses/[^/]*",
         "method":"GET",
         "proto_type":playback_pb2.ChannelPauses()
     },
@@ -121,21 +121,22 @@ API_MAP = [
         "path":"/v2/settings/profile/restrictions",
         "method":"GET",
         "proto_type":accounts_pb2.ProfileRestrictions()
+    }
+    ,
+    {
+        "path":"/vod/v2/archive/titles/[^/]*/episodes",
+        "method":"GET",
+        "proto_type":vod_pb2.VODEpisodes()
     },
     {
-        "path":"/vod/v2/archive/titles/.*$",
+        "path":"/vod/v2/archive/titles/[^/]*",
         "method":"GET",
         "proto_type":vod_pb2.VODTitle()
     },
     {
-        "path":"/pause/vod/v1/titles/archive/.*",
+        "path":"/pause/vod/v1/titles/archive/[^/]*",
         "method":"GET",
         "proto_type":pauses_pb2.VODPauses()
-    },
-    {
-        "path":"/vod/v2/archive/titles/.*/episodes$",
-        "method":"GET",
-        "proto_type":vod_pb2.VODEpisodes()
     }
 ]
 
