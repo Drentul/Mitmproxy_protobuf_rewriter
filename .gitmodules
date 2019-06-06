@@ -1,0 +1,6 @@
+[submodule "proto"]
+	path = proto
+	url = https://github.com/Drentul/Sample_proto.git/
+[submodule "mitmproxy"]
+	path = mitmproxy
+	url = https://github.com/mitmproxy/mitmproxy.git
