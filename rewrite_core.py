@@ -3,7 +3,9 @@ The last block of imports refers to the location of the generated protobuf pytho
 They are located at 'mitmproxy/venv/lib/python3.6/site-packages/proto_py' path and have similar folder structure.
 Thus, the import must be specified as follows:
 
-from proto_py{and path in subfolders with '.' delimiters if any} import {name of .proto file}_pb2
+{path in subfolders with '.' delimiters in proto_py/proto folder}.{name of .proto file}_pb2
+
+Example: image.image_pb2.Image()
 '''
 import re
 import json
@@ -14,9 +16,7 @@ from google.protobuf import json_format
 from mitmproxy import http
 from mitmproxy.script import concurrent
 from mitmproxy import ctx
-from proto_py import general_pb2
-from proto_py import item_pb2
-from proto_py.image import image_pb2
+from proto_py import *
 
 '''
 Represents the API map of the messeges between application and server.
@@ -33,7 +33,7 @@ API_MAP = [
     {
         "path":"/example/image",
         "method":"GET",
-        "proto_type":image_pb2.Image()
+        "proto_type":image.image_pb2.Image()
     },
     {
         "path":"/single/item",
