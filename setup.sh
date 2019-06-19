@@ -29,10 +29,12 @@ cd ../frontendproto
 
 mkdir -p $PYTHON_PROTO_PATH
 protoc --proto_path . --python_out=$PYTHON_PROTO_PATH $(find .  -type f -name '*.proto')
+cp __init__.py $PYTHON_PROTO_PATH
 set -
 
 echo "Installation is finished"
 echo "Now you can start working with mitmpoxy and rewrite addon usind '. run_mitm.sh'"
 
 read -n 1 -p "Press any key to exit"
+deactivate
 return

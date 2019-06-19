@@ -1,20 +1,6 @@
-"""
-GET /app-info AppInfoV2
-GET /v2/account Account
-POST /login Response:User
-GET /login/qr Response:User
-GET /logout Message
-GET /account/change-profile Message
-GET /channels EPG
-GET /walls/0 MainWall
-GET /walls/1 PersonalContentWall
-GET /v2/account/services/purchases/cache/last-update PurchaseCacheLastUpdate
-GET /purchase-info?type=live PurchaseInfos
-GET /channels/[channelId]/programs?period=([start]:[end])|now EPG
-GET /playback-info/[channelId] LivePlaybackInfo
-GET /pauses/[channelId]?live=[bool] ChannelPauses
-GET /v2/settings/profile/restrictions ProfileRestrictions
-"""
+'''
+Empty docstring
+'''
 
 import re
 import json
@@ -22,24 +8,10 @@ import time
 import os.path
 from urllib.parse import urlparse
 from google.protobuf import json_format
-from proto_py.vod.v2 import vod_pb2
-from proto_py.pauses.v1 import pauses_pb2
-from proto_py import general_pb2
-from proto_py import accounts_pb2
-from proto_py import user_pb2
-from proto_py import message_pb2
-from proto_py import epg_pb2
-from proto_py import recommendations_pb2
-from proto_py import playback_pb2
-from proto_py import purchases_pb2
+from proto_py import *
 from mitmproxy import http
 from mitmproxy.script import concurrent
 from mitmproxy import ctx
-
-#TODO: Царское туду
-#Надо:
-#1) Пройтись по другой документации api, проверить покрытие реальных запросов в приложении
-#2) Дописать по необходимости
 
 API_MAP = [
     {
@@ -48,9 +20,14 @@ API_MAP = [
         "proto_type":"text"
     },
     {
-        "path":"/contacts-verification/v1/start",
-        "method":"POST",
-        "proto_type":general_pb2.HttpError()
+        "path":"vod/v2/",
+        "method":"GET",
+        "proto_type":vod.v2.vod_pb2.VODCollection()
+    },
+    {
+        "path":"/auth/v1/with-verified-contacts/available-logins",
+        "method":"GET",
+        "proto_type":auth.v1.available_logins_pb2.AvailableLogins()
     },
     {
         "path":"/app-info",
@@ -126,17 +103,17 @@ API_MAP = [
     {
         "path":"/vod/v2/archive/titles/[^/]*/episodes",
         "method":"GET",
-        "proto_type":vod_pb2.VODEpisodes()
+        "proto_type":vod.v2.vod_pb2.VODEpisodes()
     },
     {
         "path":"/vod/v2/archive/titles/[^/]*",
         "method":"GET",
-        "proto_type":vod_pb2.VODTitle()
+        "proto_type":vod.v2.vod_pb2.VODTitle()
     },
     {
         "path":"/pause/vod/v1/titles/archive/[^/]*",
         "method":"GET",
-        "proto_type":pauses_pb2.VODPauses()
+        "proto_type":pauses.v1.pauses_pb2.VODPauses()
     }
 ]
 
