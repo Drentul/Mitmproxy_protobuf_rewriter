@@ -29,7 +29,8 @@ cd ../proto
 
 mkdir -p $PYTHON_PROTO_PATH
 protoc --proto_path . --python_out=$PYTHON_PROTO_PATH $(find .  -type f -name '*.proto')
-cp __init__.py $PYTHON_PROTO_PATH
+read -n 1 -p "Press any key to exit"
+cp ../__init__.py $PYTHON_PROTO_PATH
 set -
 
 echo "Installation is finished"
