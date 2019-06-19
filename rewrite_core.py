@@ -1,5 +1,9 @@
 '''
-Empty docstring
+Protobuf python sources are located at 
+'mitmproxy/venv/lib/python3.6/site-packages/proto_py' path
+They are importes automatically by from proto_py import *
+But when using, you also need to specify the subfolders such as:
+  vod.v2.vod_pb2.VODCollection()
 '''
 
 import re
@@ -12,6 +16,13 @@ from proto_py import *
 from mitmproxy import http
 from mitmproxy.script import concurrent
 from mitmproxy import ctx
+
+'''
+Represents the API map of the messeges between application and server.
+It establishes a correspondence between the path used and the return type of the protobuff message.
+
+"proto_type":"text" - This is a special modifier showing that the body of the request will return text message.
+'''
 
 API_MAP = [
     {
@@ -116,6 +127,12 @@ API_MAP = [
         "proto_type":pauses.v1.pauses_pb2.VODPauses()
     }
 ]
+
+'''
+List of possible errors. It uses in case of return code not in 2xx.
+Than applies the first suitable message listed below if this list is not empty.
+'''
+ERRORS = [general_pb2.Error(), general_pb2.Errors()]
 
 def to_camel_case(snake_str: str) -> str:
     '''Translates snake_case style string to camelCase style'''
@@ -278,9 +295,9 @@ class Rewriter:
                     json_obj = json.load(content_file)
                     camel_json(json_obj)
 
-                    if flow.response.status_code == 200:
+                    if 200 <= flow.response.status_code < 300 or not ERRORS:
                         msg_types = [api.get('proto_type')]
                     else:
-                        msg_types = [general_pb2.HttpFormErrors(), general_pb2.HttpError()]
+                        msg_types = ERRORS
 
                     rewrite_body_by_json(flow.response, json_obj, msg_types)
