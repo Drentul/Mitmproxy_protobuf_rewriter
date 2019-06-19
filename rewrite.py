@@ -1,6 +1,7 @@
 ''' The addon is used to rewrite the content of passing traffic.
-It is configured in json file.
-The file sets a set of rules, according to which the content of the requests is changed.
+It is configured in json below.
+The json sets a number of rules, according to which the content of the requests is changed.
+
 Use regexp syntax for it in fields: authority_expr, path_expr
 https://docs.python.org/2/library/re.html - regexp in 're' python library
 
@@ -12,11 +13,11 @@ Example:
   {
    "is_on": true,							//OPTIONAL: default: true
    "delay": 3,								//OPTIONAL: default: 0 //In seconds
-   "authority_expr": "fe.smotreshka.tv",	//OPTIONAL: default: any
-   "path_expr": "/playback-info",			//OPTIONAL: default: any
+   "authority_expr": "example.com",			//OPTIONAL: default: any
+   "path_expr": "/example_path",			//OPTIONAL: default: any
    "method": ["GET"],						//OPTIONAL: default: ["GET", "POST", "PUT", "DELETE"]
-   "save_content": "playback/some_name.txt",//OPTIONAL: default: None
-   "rewrite_content": "LivePlaybackInfo",	//OPTIONAL: default: None
+   "save_content": "some_name.txt",			//OPTIONAL: default: None
+   "rewrite_content": "SampleRewrite",		//OPTIONAL: default: None
    "status_code": 200,						//OPTIONAL: default: None
    "headers": {								//OPTIONAL: default: None
     "Content-Type": "Peace_of_cake"
@@ -24,7 +25,8 @@ Example:
   }
 ]
 
-If there is "playback/some_name<counter>.txt", where counter is 1, 2, 3... and so on.
+Notes:
+Saving will occur as "some_name<counter>.txt", where counter is 1, 2, 3... and so on.
 
 ////////////////////////////////////////////////////////////////////////
 
@@ -46,7 +48,9 @@ FOR COPY & PASTE!
 
 ////////////////////////////////////////////////////////////////////////
 
-Note that each request may response error one of theese types
+Please note that each request may return an error if the status code is not 2xx.
+Define a list of possible error messages in the rewrite_core.py file.
+
 HttpFormErrors or HttpError
 Status code must not be 200
 Its proto messages structure is:
@@ -69,6 +73,7 @@ import rewrite_core
 
 #Way to files which is used to replace content
 REWRITING_DIR = 'fake_server'
+#Way to savings folder
 SAVING_DIR = 'saves'
 
 CONFIG = \
