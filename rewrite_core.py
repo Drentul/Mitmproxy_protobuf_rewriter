@@ -166,11 +166,11 @@ def rewrite_body_by_json(flow_response_or_request, json_object, msg_types) -> No
             json_format.Parse(\
                 json.dumps(json_object),\
                 msg,\
-                ignore_unknown_fields=False).SerializeToString()
+                ignore_unknown_fields=False)
             break
         except json_format.ParseError:
             continue
-    flow_response_or_request.content = msg
+    flow_response_or_request.content = msg.SerializeToString()
 
 class Rewriter:
     '''Class for capturing and rewriting some requests and responses'''
