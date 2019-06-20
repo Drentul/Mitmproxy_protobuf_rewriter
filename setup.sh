@@ -29,7 +29,7 @@ cd ../proto
 
 mkdir -p $PYTHON_PROTO_PATH
 protoc --proto_path . --python_out=$PYTHON_PROTO_PATH $(find .  -type f -name '*.proto')
-cp ../__init__.py $PYTHON_PROTO_PATH
+cp ../init.py $PYTHON_PROTO_PATH/__init__.py
 set -
 
 echo "Installation is finished"
