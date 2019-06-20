@@ -13,10 +13,10 @@ import time
 import os.path
 from urllib.parse import urlparse
 from google.protobuf import json_format
+from proto_py import *
 from mitmproxy import http
 from mitmproxy.script import concurrent
 from mitmproxy import ctx
-from proto_py import *
 
 '''
 Represents the API map of the messeges between application and server.
@@ -33,17 +33,17 @@ API_MAP = [
     {
         "path":"/example/image",
         "method":"GET",
-        "proto_type":image.image_pb2.Image()
+        "proto_type":image.image_pb2.Image
     },
     {
         "path":"/single/item",
         "method":"GET",
-        "proto_type":item_pb2.Item()
+        "proto_type":item_pb2.Item
     },
     {
         "path":"/multiple/items",
         "method":"GET",
-        "proto_type":item_pb2.Items()
+        "proto_type":item_pb2.Items
     }
 ]
 
@@ -51,7 +51,7 @@ API_MAP = [
 List of possible errors. It uses in case of return code not in 2xx.
 Than applies the first suitable message listed below if this list is not empty.
 '''
-ERRORS = [general_pb2.Error(), general_pb2.Errors()]
+ERRORS = [general_pb2.Error, general_pb2.Errors]
 
 def to_camel_case(snake_str: str) -> str:
     '''Translates snake_case style string to camelCase style'''
@@ -80,14 +80,15 @@ def rewrite_body_by_json(flow_response_or_request, json_object, msg_types) -> No
     msg = None
     for msg_type in msg_types:
         try:
-            msg = json_format.Parse(\
+            msg = msg_type()
+            json_format.Parse(\
                 json.dumps(json_object),\
-                msg_type,\
-                ignore_unknown_fields=False).SerializeToString()
+                msg,\
+                ignore_unknown_fields=False)
             break
         except json_format.ParseError:
             continue
-    flow_response_or_request.content = msg
+    flow_response_or_request.content = msg.SerializeToString()
 
 class Rewriter:
     '''Class for capturing and rewriting some requests and responses'''
@@ -171,6 +172,7 @@ class Rewriter:
                 flow.response.headers[header] = headers.get(header)
 
         api = self.find_api(flow)
+        protobuf_msg_type = api.get('proto_type')
 
         #Save block
 
@@ -190,12 +192,12 @@ class Rewriter:
                 counter = counter + 1
 
             #Saving process
-            if api.get('proto_type') == 'text':
+            if protobuf_msg_type == 'text':
                 content = flow.response.text
             else:
-                msg = api.get('proto_type')
-                msg.ParseFromString(flow.response.content)
-                json_obj = json_format.MessageToJson(msg, preserving_proto_field_name=True)
+                protobuf_message = protobuf_msg_type()
+                protobuf_message.ParseFromString(flow.response.content)
+                json_obj = json_format.MessageToJson(protobuf_message, preserving_proto_field_name=True)
                 content = json_obj.encode().decode("unicode-escape")
 
             with open(changed_path, "w") as save_file:
@@ -207,7 +209,7 @@ class Rewriter:
         if not rewrite_content_path in (None, ''):
             #Rewriting process
             with open(os.path.join(self.rewriting_dir, rewrite_content_path)) as content_file:
-                if api.get('proto_type') == 'text':
+                if protobuf_msg_type == 'text':
                     text = content_file.read()
                     flow.response.text = text
                 else:
@@ -215,7 +217,7 @@ class Rewriter:
                     camel_json(json_obj)
 
                     if 200 <= flow.response.status_code < 300 or not ERRORS:
-                        msg_types = [api.get('proto_type')]
+                        msg_types = [protobuf_msg_type]
                     else:
                         msg_types = ERRORS
 
