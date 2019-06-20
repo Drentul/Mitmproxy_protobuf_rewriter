@@ -33,98 +33,98 @@ API_MAP = [
     {
         "path":"vod/v2/",
         "method":"GET",
-        "proto_type":vod.v2.vod_pb2.VODCollection()
+        "proto_type":vod.v2.vod_pb2.VODCollection
     },
     {
         "path":"/auth/v1/with-verified-contacts/available-logins",
         "method":"GET",
-        "proto_type":auth.v1.available_logins_pb2.AvailableLogins()
+        "proto_type":auth.v1.available_logins_pb2.AvailableLogins
     },
     {
         "path":"/app-info",
         "method":"GET",
-        "proto_type":general_pb2.AppInfoV2()
+        "proto_type":general_pb2.AppInfoV2
     },
     {
         "path":"/v2/account",
         "method":"GET",
-        "proto_type":accounts_pb2.Account()
+        "proto_type":accounts_pb2.Account
     },
     {
         "path":"/login",
         "method":"POST",
-        "proto_type":user_pb2.User()
+        "proto_type":user_pb2.User
     },
     {
         "path":"/login/qr",
         "method":"GET",
-        "proto_type":user_pb2.User()
+        "proto_type":user_pb2.User
     },
     {
         "path":"/logout",
         "method":"GET",
-        "proto_type":message_pb2.Message()
+        "proto_type":message_pb2.Message
     },
     {
         "path":"/account/change-profile",
         "method":"GET",
-        "proto_type":message_pb2.Message()
+        "proto_type":message_pb2.Message
     },
     {
         "path":"/channels",
         "method":"GET",
-        "proto_type":epg_pb2.EPG()
+        "proto_type":epg_pb2.EPG
     },
     {
         "path":"/walls/0",
         "method":"GET",
-        "proto_type":recommendations_pb2.MainWall()
+        "proto_type":recommendations_pb2.MainWall
     },
     {
         "path":"/walls/1",
         "method":"GET",
-        "proto_type":recommendations_pb2.PersonalContentWall()
+        "proto_type":recommendations_pb2.PersonalContentWall
     },
     {
         "path":"/purchase-info",
         "method":"GET",
-        "proto_type":purchases_pb2.PurchaseInfos()
+        "proto_type":purchases_pb2.PurchaseInfos
     },
     {
         "path":"/playback-info/[^/]*",
         "method":"GET",
-        "proto_type":playback_pb2.LivePlaybackInfo()
+        "proto_type":playback_pb2.LivePlaybackInfo
     },
     {
         "path":"/channels/[^/]*/programs",
         "method":"GET",
-        "proto_type":epg_pb2.EPG()
+        "proto_type":epg_pb2.EPG
     },
     {
         "path":"/pauses/[^/]*",
         "method":"GET",
-        "proto_type":playback_pb2.ChannelPauses()
+        "proto_type":playback_pb2.ChannelPauses
     },
     {
         "path":"/v2/settings/profile/restrictions",
         "method":"GET",
-        "proto_type":accounts_pb2.ProfileRestrictions()
+        "proto_type":accounts_pb2.ProfileRestrictions
     }
     ,
     {
         "path":"/vod/v2/archive/titles/[^/]*/episodes",
         "method":"GET",
-        "proto_type":vod.v2.vod_pb2.VODEpisodes()
+        "proto_type":vod.v2.vod_pb2.VODEpisodes
     },
     {
         "path":"/vod/v2/archive/titles/[^/]*",
         "method":"GET",
-        "proto_type":vod.v2.vod_pb2.VODTitle()
+        "proto_type":vod.v2.vod_pb2.VODTitle
     },
     {
         "path":"/pause/vod/v1/titles/archive/[^/]*",
         "method":"GET",
-        "proto_type":pauses.v1.pauses_pb2.VODPauses()
+        "proto_type":pauses.v1.pauses_pb2.VODPauses
     }
 ]
 
@@ -133,7 +133,7 @@ List of possible errors. It uses in case of return code not in 2xx.
 Than applies the first suitable message listed below if this list is not empty.
 '''
 
-ERRORS = [general_pb2.HttpFormErrors(), general_pb2.HttpError()]
+ERRORS = [general_pb2.HttpFormErrors, general_pb2.HttpError]
 
 def to_camel_case(snake_str: str) -> str:
     '''Translates snake_case style string to camelCase style'''
@@ -162,9 +162,10 @@ def rewrite_body_by_json(flow_response_or_request, json_object, msg_types) -> No
     msg = None
     for msg_type in msg_types:
         try:
-            msg = json_format.Parse(\
+            msg = msg_type()
+            json_format.Parse(\
                 json.dumps(json_object),\
-                msg_type,\
+                msg,\
                 ignore_unknown_fields=False).SerializeToString()
             break
         except json_format.ParseError:
@@ -253,6 +254,7 @@ class Rewriter:
                 flow.response.headers[header] = headers.get(header)
 
         api = self.find_api(flow)
+        protobuf_msg_type = api.get('proto_type')
 
         #Save block
 
@@ -272,12 +274,12 @@ class Rewriter:
                 counter = counter + 1
 
             #Saving process
-            if api.get('proto_type') == 'text':
+            if protobuf_msg_type == 'text':
                 content = flow.response.text
             else:
-                msg = api.get('proto_type')
-                msg.ParseFromString(flow.response.content)
-                json_obj = json_format.MessageToJson(msg, preserving_proto_field_name=True)
+                protobuf_message = protobuf_msg_type()
+                protobuf_message.ParseFromString(flow.response.content)
+                json_obj = json_format.MessageToJson(protobuf_message, preserving_proto_field_name=True)
                 content = json_obj.encode().decode("unicode-escape")
 
             with open(changed_path, "w") as save_file:
@@ -289,7 +291,7 @@ class Rewriter:
         if not rewrite_content_path in (None, ''):
             #Rewriting process
             with open(os.path.join(self.rewriting_dir, rewrite_content_path)) as content_file:
-                if api.get('proto_type') == 'text':
+                if protobuf_msg_type == 'text':
                     text = content_file.read()
                     flow.response.text = text
                 else:
@@ -297,7 +299,7 @@ class Rewriter:
                     camel_json(json_obj)
 
                     if 200 <= flow.response.status_code < 300 or not ERRORS:
-                        msg_types = [api.get('proto_type')]
+                        msg_types = [protobuf_msg_type]
                     else:
                         msg_types = ERRORS
 
