@@ -132,7 +132,8 @@ API_MAP = [
 List of possible errors. It uses in case of return code not in 2xx.
 Than applies the first suitable message listed below if this list is not empty.
 '''
-ERRORS = [general_pb2.Error(), general_pb2.Errors()]
+
+ERRORS = [general_pb2.HttpFormErrors(), general_pb2.HttpError()]
 
 def to_camel_case(snake_str: str) -> str:
     '''Translates snake_case style string to camelCase style'''
