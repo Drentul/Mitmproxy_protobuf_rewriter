@@ -1,0 +1,9 @@
+// Error message for websockets (for HTTP use httpError type)
+syntax = "proto2";
+
+package messages;
+
+message wsError {
+    required int32  code = 1;
+    required string msg  = 2;
+}

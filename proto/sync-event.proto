@@ -1,0 +1,29 @@
+syntax = "proto2";
+
+// Notify about data changes for syncronize client cache with server state.
+package messages;
+
+// © 2014, TightVideo Ltd.
+// Authors: A.I.Grafov <grafov@tightvideo.com>
+
+message syncEvent {
+  required model model = 1;
+  required syncOperation operation = 2;
+  repeated int64 objId = 3;
+}
+
+enum model {
+  PROFILE = 0;
+  DEVICE = 1;
+  FAVORITE = 2;
+  OFFER = 3;
+  CHANNEL = 4;
+  PROGRAM = 5;
+}
+
+enum syncOperation {
+  APPEND = 1;
+  UPDATE = 2;
+  REMOVE = 3;
+  RESYNC = 4;
+}

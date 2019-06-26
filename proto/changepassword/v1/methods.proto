@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package messages.changepassword.v1;
+
+option go_package = "v1";
+
+message MethodInfo {
+    required string id = 1;
+    required string title = 2;
+}
+
+message MethodsInfos {
+    repeated MethodInfo methods = 1;
+}

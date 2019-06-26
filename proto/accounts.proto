@@ -1,0 +1,69 @@
+syntax = "proto2";
+
+import "provider.proto";
+
+package messages;
+
+message Login {
+    required string id        = 1;
+    required string login     = 2;
+    required bool   is_master = 3;
+    optional string email     = 4;
+    optional string phone     = 5;
+    optional string session   = 6;
+}
+
+message ProfileRestriction {
+    required string id = 1;
+    optional string name  = 2;
+    optional uint32 value = 3;
+    optional bool is_adult = 4;
+}
+
+message ProfileRestrictions {
+    repeated ProfileRestriction restrictions = 1;
+}
+
+message Profile {
+    required string id           = 1;
+    required string name         = 2;
+    required bool   pin_required = 3;
+    required int32  age_rating   = 4;
+    required bool   is_master    = 5;
+    repeated string recent_views = 6;
+    repeated string favorites  = 7;
+    optional string restriction = 8;
+}
+
+message AccountIVI {
+    optional int32 id = 1;
+    optional int64 expiration = 2;
+    optional string verimatrix_id = 3;
+    optional string session = 4;
+    optional int64 set_at = 5;
+}
+
+
+message Account {
+    optional string id = 1001;
+
+    required messages.Login           user          = 1;
+    required messages.Profile         profile       = 2;
+    repeated messages.Profile         profiles      = 3;
+    repeated messages.Login           users         = 4;
+    optional messages.AccountProvider provider      = 5;
+    optional messages.AccountProvider next_provider = 6;
+    optional string                   delete_reason = 7;
+    optional bool                     anonymous     = 8;
+    optional messages.AccountIVI IVI = 9;
+}
+
+
+message AccountProvider {
+    required messages.Provider provider = 1;
+    required int32             state    = 2;
+}
+
+message Balance {
+    optional float balance = 1;
+}

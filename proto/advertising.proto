@@ -1,0 +1,8 @@
+syntax = "proto2";
+
+package messages;
+
+message AdvSettings {
+    repeated string ids       = 1;
+    optional int64  frequency = 2 [default=0];
+}

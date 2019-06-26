@@ -1,0 +1,24 @@
+syntax = "proto2";
+
+// Playback operations for remote control events.
+package messages;
+
+// © 2014, TightVideo Ltd.
+// Authors: A.I.Grafov <grafov@tightvideo.com>
+
+message playbackEvent {
+  required playbackOperation operation = 1;
+  optional int64 position = 2; // absolute positioning for playback or sound level (in %)
+  optional int64 speedup = 3;  // Nx forward/rewind operation (-N for rewind)
+  optional int32 volume = 4; // -n/+n is relative position for sound level setup
+}
+
+enum playbackOperation {
+  PLAY = 0;
+  PAUSE = 1;
+  STOP = 2;
+  FORWARD = 3;
+  REWIND = 4;
+  VOLUP = 5;
+  VOLDOWN = 6;
+}

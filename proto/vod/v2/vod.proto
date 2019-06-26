@@ -1,0 +1,154 @@
+syntax = "proto2";
+
+package messages.vod.v2;
+
+option go_package = "v2";
+
+message VODGenre {
+    required string id = 1;
+    optional string title = 2;
+    optional int32 priority = 3;
+}
+
+message VODGenrePreview {
+    required string id = 1;
+    optional string title = 2;
+}
+
+message VODCategory {
+    required string id = 1;
+    optional string title = 2;
+    optional string description = 3;
+    optional int32 priority = 4;
+    repeated VODGenre genres = 5;
+}
+
+message VODCategoryPreview {
+    required string id = 1;
+    optional string title = 2;
+}
+
+message VODCategories {
+    repeated VODCategory categories = 1;
+}
+
+message VODImage {
+    required string type = 1;
+    required string path = 2;
+    optional string originalType = 3;
+}
+
+message VODCountry {
+    required string id = 1;
+    required string title = 2;
+}
+
+message VODPlaybackParam {
+    required string key = 1;
+    required string value = 2;
+}
+
+message VODPurchaseCheckParam {
+    required string key = 1;
+    required string value = 2;
+}
+
+message VODPlaybackMethod {
+    required string name = 1;
+    optional int32 priority = 2;
+    repeated VODPlaybackParam params = 3;
+}
+
+message VODPurchaseCheckMethod {
+    required string name = 1;
+    repeated VODPurchaseCheckParam params = 3;
+}
+
+message VODMedia {
+    required string title = 1;
+    optional string description = 2;
+    optional bool isHD = 3;
+    required string source = 4;
+    repeated VODPlaybackMethod playbackMethods = 5;
+    optional string id = 6;
+    repeated VODPurchaseCheckMethod purchaseCheckMethods = 7;
+}
+
+message VODSeasonPreview {
+    required string id = 1;
+    required int32 number = 2;
+}
+
+message VODTitlePreview {
+    required string id = 1;
+    required string title = 2;
+    optional string originalTitle = 3;
+    repeated VODImage thumbnails = 4;
+    repeated VODImage posters = 5;
+    repeated VODImage additionalImages = 6;
+    repeated VODGenrePreview genres = 7;
+    repeated VODCategoryPreview categories = 8;
+    optional string ageRating = 9;
+    optional float ratingImdb = 10;
+    optional float ratingKp = 11;
+    optional float ratingSource = 12;
+    repeated int32 years = 13;
+    repeated VODCountry countries = 14;
+    optional int64 duration = 15;
+    optional bool hasSeries = 16;
+    repeated VODBrandingMethod brandingMethods = 17;
+}
+
+message VODTitlePreviews {
+    repeated VODTitlePreview titles = 1;
+}
+
+message VODTitleDetails {
+    optional string description = 1;
+    repeated VODImage screenshots = 2;
+    repeated VODMedia mediaItems = 3;
+    repeated VODSeasonPreview seasons = 4;
+    repeated VODBrandingMethod brandingMethods = 5;
+}
+
+message VODTitle {
+    required VODTitlePreview preview = 1;
+    required VODTitleDetails details = 2;
+}
+
+message VODSeason {
+    required string id = 1;
+    optional string title = 2;
+    optional int32 number = 3;
+    optional string description = 4;
+}
+
+message VODEpisodes {
+    repeated VODTitlePreview episodes = 1;
+}
+
+message VODCollection {
+    required string id = 1;
+    optional string title = 2;
+    optional string abstract = 3;
+    repeated VODImage thumbnails = 4;
+    repeated VODImage posters = 5;
+    repeated VODImage additionalImages = 6;
+}
+
+message VODCollections {
+    repeated VODCollection collections = 1;
+}
+
+message VODPlaybackUrl {
+    required string url = 1;
+}
+
+message VODBrandingMethod {
+    required string name = 1;
+    optional int32 priority = 2;
+}
+
+message VODIsPurchased {
+    required bool isPurchased = 1;
+}

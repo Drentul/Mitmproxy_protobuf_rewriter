@@ -1,0 +1,46 @@
+syntax = "proto2";
+
+package messages.providers.v1;
+
+option go_package = "v1";
+
+message Region {
+    required string id   = 1;
+    required string name = 2;
+    required int32  gmttimezone = 3;
+}
+
+message Regions {
+    repeated Region regions = 1;
+}
+
+message Provider {
+    required string id          = 1;
+    required string name        = 2;
+    optional string url         = 3;
+    repeated string phones      = 4;
+    optional string email       = 5;
+    optional string max_mind_id = 6;
+    repeated string regions     = 7;
+    optional string internal_id = 8;
+}
+
+message Providers {
+    repeated Provider providers = 1;
+}
+
+message ProviderInfo {
+    required string id            = 1;
+    required string name          = 2;
+    optional string url           = 3;
+    optional Phone sales_phone    = 4;
+    optional string qs_text       = 5;
+    optional string url_profile   = 6;
+    repeated Phone support_phones = 7;
+}
+
+message Phone {
+    required string country_code = 1;
+    required string region_code  = 2;
+    required string number       = 3;
+}

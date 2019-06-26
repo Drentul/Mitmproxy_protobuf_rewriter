@@ -1,0 +1,18 @@
+syntax = "proto2";
+
+package messages;
+
+message Notification {
+    optional string id        = 1;
+    optional string title     = 2;
+    optional string body      = 3;
+    optional int32  subject   = 4;
+    optional int64  time      = 5;
+    optional int64  startsAt  = 6;
+    optional int64  expiresAt = 7;
+}
+
+message NotificationList {
+    repeated Notification notifications = 1;
+    optional int64        fetchTime     = 2;
+}

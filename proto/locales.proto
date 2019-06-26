@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package messages;
+
+message Locale {
+    optional string id   = 1;
+    optional string name = 2;
+}
+
+message Locales {
+    repeated Locale locales = 1;
+}

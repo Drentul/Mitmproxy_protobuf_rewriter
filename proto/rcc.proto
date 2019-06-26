@@ -1,0 +1,50 @@
+syntax = "proto2";
+
+// Remote Content Call
+// Common format for data interchange between devices
+package messages;
+
+// © 2014, TightVideo Ltd.
+// Authors: A.I.Grafov <grafov@tightvideo.com>
+
+import "error.proto";
+import "sync-event.proto";
+import "list-event.proto";
+import "open-event.proto";
+import "playback-event.proto";
+import "qrcode-event.proto";
+
+message rcc {
+    // common required:
+    required subject subject = 1;
+    // common optional:
+    optional bytes from = 2; // адрес отправителя, приходит в письмах от сервера
+    optional bytes to = 3; // адрес получателя, устанавливается клиентом
+    optional bytes self = 4; // адрес самого устройства, приходит от сервера
+    optional bytes ip = 5; // ip-адрес устройства, приходит от сервера
+
+    // only one of these types present in the message:
+    optional wsError error = 10;
+    optional listEvent list = 11;
+    repeated syncEvent sync = 12;
+    optional openEvent open = 13;
+    optional playbackEvent playback = 14;
+    optional qrcodeEvent qrcode = 15;
+    optional openStatusEvent openStatus = 130;
+    // append your new event here with new number
+
+}
+
+enum subject {
+    ERROR = 1; // error message; use error
+    LIST = 2;  // on device list change; use listEvent
+    RESET = 8; // reset device to initial state
+    SYNC = 16; // resync device cache; use changeEvent
+    OPEN = 32; // open media on a device aka «second screen»; use openMediaEvent
+    OPEN_STATUS = 33; // status of an open media message; use openStatusEvent
+    PLAYBACK = 64; // playback operations on a device; use playbackEvent
+    QRCODE = 128; // authorization
+    CONNECT = 256; // on device conect, used internally by server side; doesn't use event msgs
+    DISCONNECT = 512; // on device disconnect, used internally by server side; doesn't use event msgs
+    // append new subject for your new event with new number
+}

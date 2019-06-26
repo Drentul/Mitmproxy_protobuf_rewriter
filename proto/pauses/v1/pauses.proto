@@ -1,0 +1,31 @@
+syntax = "proto2";
+
+package messages.pauses.v1;
+
+option go_package = "v1";
+
+
+message VODPause {
+    required string id   = 1;
+    required string sourceId   = 2;
+    required string titleId   = 3;
+    required string seasonId = 4;
+    required string episodeId = 5;
+    required string mediaItemId = 6;
+    required int64 msecFromEpoch = 7;
+    required int64 msecFromStart = 8;
+    required int64 totalDurationMsec = 9;
+    required int64 createdAt = 10;
+}
+
+message VODPauses {
+    repeated VODPause pauses = 1;
+}
+
+message AddVODPauseMessage {
+    required VODPause savedPause = 1;
+}
+
+message RecentViewsTV {
+    repeated string channelId = 1;
+}

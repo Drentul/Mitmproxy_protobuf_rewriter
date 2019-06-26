@@ -1,0 +1,12 @@
+syntax = "proto2";
+
+package messages.auth.v1;
+
+message AvailableLogin {
+    required string login = 1;
+    optional string name = 2;
+}
+
+message AvailableLogins {
+    repeated AvailableLogin options = 1;
+}

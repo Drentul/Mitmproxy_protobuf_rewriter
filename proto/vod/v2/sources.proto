@@ -1,0 +1,41 @@
+syntax = "proto2";
+
+package messages.vod.v2;
+
+option go_package = "v2";
+
+import "vod/v2/vod.proto";
+
+message VODSource {
+    required string id = 1;
+    optional string title = 2;
+    optional string description = 3;
+    optional int32 priority = 4;
+    repeated VODBrandingMethod brandingMethods = 5;
+    optional string sourceType = 6;
+    optional VODCapabilities capabilities = 7;
+}
+
+message VODCapabilities {
+    optional bool isCollectionSupported = 1;
+    optional bool isMetaGenresSupported = 2;
+    optional bool isCategoriesSupported = 3;
+    message sourceListFilteringSettings {
+        enum filterSupport {
+            notsupported = 1;
+            required = 2;
+            optional = 3;
+        }
+        optional filterSupport categoryId = 1;
+        optional filterSupport genreIds = 2;
+        optional bool isMultipleGenresSupported = 3;
+    }
+    optional sourceListFilteringSettings titlesList = 4;
+    optional sourceListFilteringSettings collectionsList = 5;
+    optional sourceListFilteringSettings collectionTitlesList = 6;
+}
+
+
+message VODSources {
+    repeated VODSource sources = 1;
+}

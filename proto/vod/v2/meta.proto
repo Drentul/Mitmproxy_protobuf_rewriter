@@ -1,0 +1,20 @@
+syntax = "proto2";
+
+package messages.vod.v2;
+
+option go_package = "v2";
+
+message SortingOption {
+    required string title = 1;
+    required string direction = 2;
+}
+
+message Sorting {
+    required string name = 1;
+    required string title = 2;
+    repeated SortingOption options = 3;
+}
+
+message SortingsOptions {
+    repeated Sorting sortings = 1;
+}

@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+package messages;
+
+message Department {
+    optional int32  id      = 1;
+    optional string name    = 2;
+    optional int32  houseId = 3;
+}
+
+message AlmatvSettings {
+    repeated Department departments = 1;
+}
+
