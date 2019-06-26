@@ -1,8 +1,0 @@
-// Messages with information about cache state
-syntax = "proto2";
-
-package messages;
-
-message PurchaseCacheLastUpdate {
-    required int64 time = 1;
-}

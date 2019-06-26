@@ -1,8 +1,0 @@
-syntax = "proto2";
-
-package messages;
-
-message Thumbnail {
-    required string url = 1;
-    required string md5 = 2;
-}

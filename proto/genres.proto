@@ -1,7 +1,0 @@
-syntax = "proto2";
-
-package messages;
-
-message Genres {
-    repeated string genres = 1;
-}
