@@ -1,0 +1,29 @@
+{
+  "blocks":
+  [
+    {
+      "row": 3,
+      "layout": "small_small_small",
+      "platforms": [ "ios", "android" ],
+      "user_status": "authorized",
+      "items":
+      [
+        {
+          "id": "social_fb",
+          "image": "http://fe.smotreshka.tv/static/ad_images/ok.jpg",
+          "link": "lfstrm://show_screen?screen_id=rate_app"
+        },
+        {
+          "id": "social_tg",
+          "image": "http://fe.smotreshka.tv/static/ad_images/tg_3.png",
+          "link": "lfstrm://show_screen?screen_id=offers_list&offer_type=tv&offer_id=53f30cf24e2e670103007d83"
+        },
+        {
+          "id": "social_vk",
+          "image": "http://fe.smotreshka.tv/static/ad_images/vk_3.png",
+          "link": "lfstrm://show_screen?screen_id=offers_list&offer_type=VOD&source=ivi&offer_id=s_9572"
+        }
+      ]
+    }
+  ]
+}

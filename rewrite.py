@@ -71,36 +71,16 @@ message HttpError {
 }'''
 import rewrite_core
 
-#Way to files which is used to replace content
-REWRITING_DIR = 'fake_server'
-#Way to savings folder
-SAVING_DIR = 'saves'
-
-CONFIG = \
-'''
-[
-  {
-   "path_expr": "/static/basic_settings.json",
-   "method": ["GET"],
-   "save_content": "",
-   "rewrite_content": "basic_settings.json",
-   "status_code": 200,
-   "headers": {
-   }
-  },
-  {
-   "delay": 0,
-   "path_expr": "/playback-info/.*",
-   "method": ["GET"],
-   "save_content": "pb",
-   "rewrite_content": "",
-   "status_code": 200,
-   "headers": {
-   }
-  }
-]
-'''
+# Way to addons configuration file
+CONFIG_FILE_PATH = 'data/config.json'
+# Way to files which is used to replace content
+REWRITING_DIR = 'data/fake_server'
+# Way to savings folder
+SAVING_DIR = 'data/saves'
+# Way to api rules files
+API_RULES_DIR = 'data/api_rules'
 
 addons = [
-    rewrite_core.Rewriter(CONFIG, SAVING_DIR, REWRITING_DIR)
+    rewrite_core.Rewriter(CONFIG_FILE_PATH, SAVING_DIR,
+                          REWRITING_DIR, API_RULES_DIR)
 ]

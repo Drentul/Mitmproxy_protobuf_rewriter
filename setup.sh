@@ -25,7 +25,7 @@ python3 ../add_pythonpath.py
 
 export PYTHON_PROTO_PATH="$VIRTUAL_ENV/lib/python3.6/site-packages/proto_py"
 
-cd ../frontendproto
+cd ../proto
 
 mkdir -p $PYTHON_PROTO_PATH
 protoc --proto_path . --python_out=$PYTHON_PROTO_PATH $(find .  -type f -name '*.proto')

@@ -1,0 +1,12 @@
+{
+  "name": "InTV",
+  "version": "1.20.1",
+  "clientVersion": "2000000",
+  "apiVersion": "2.0",
+  "buildTime": "2019-03-14T08:31:37",
+  "currentTime": "1558440480",
+  "dvrAvailable": "1558044480",
+  "gaTrackingId": "UA-64874570-2",
+  "gaSendRate": 3,
+  "gaPlayEventTimeout": 3000
+}

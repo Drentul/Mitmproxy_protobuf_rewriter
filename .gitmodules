@@ -1,6 +1,6 @@
-[submodule "frontendproto"]
-	path = frontendproto
-	url = ssh://git@gitlab.lfstrm.tv:2002/server-side/frontend/frontendproto.git
 [submodule "mitmproxy"]
 	path = mitmproxy
 	url = https://github.com/mitmproxy/mitmproxy.git
+[submodule "proto"]
+	path = proto
+	url = ssh://git@gitlab.lfstrm.tv:2002/server-side/frontend/frontendproto.git

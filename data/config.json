@@ -1,0 +1,20 @@
+[
+  {
+   "path_expr": "/static/basic_settings.json",
+   "method": ["GET"],
+   "save_content": "",
+   "rewrite_content": "basic_settings.json",
+   "status_code": 200,
+   "headers": {
+   }
+  },
+  {
+   "delay": 1,
+   "path_expr": "/app-info1",
+   "method": ["GET"],
+   "save_content": "app-info.json",
+   "rewrite_content": "app-info.json",
+   "headers": {
+   }
+  }
+]
