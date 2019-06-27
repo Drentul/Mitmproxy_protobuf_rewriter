@@ -30,7 +30,8 @@ The data needed to manage the add-on are in the /data folder.
 
 **/data/config.json** - The file contains a set of rules specified in the json format. They are used to define actions that will be performed on passing requests. Actions such as: changing the headers, response code, saving or rewriting the content, adding a delay.
 
-Format of one rule:
+Format of one rule:  
+
 '''
 [
   {
