@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package messages;
+
+message Error{
+    required int32 code = 1;
+    required string status = 2;
+    optional string description = 3;
+}
+
+message Errors{
+    repeated Error errors = 1;
+}
