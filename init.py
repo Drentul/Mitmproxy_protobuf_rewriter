@@ -11,3 +11,4 @@ for r, d, f in walk(dirname(__file__)):
         if _file.endswith('.py') and not _file.endswith('__init__.py'):
             module = import_module('.' + basename(_file)[:-3], import_path)
             clsmembers.extend(inspect.getmembers(module, inspect.isclass))
+
