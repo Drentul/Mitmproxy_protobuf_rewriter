@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+package messages;
+
+message Item{
+    required int32 id = 1;
+    required string type = 2;
+    optional bool isActive = 3;
+}
+
+message Items{
+    repeated Item items = 1;
+}
