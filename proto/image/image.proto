@@ -1,0 +1,9 @@
+syntax = "proto2";
+
+package messages;
+
+message Image{
+    required string url = 1;
+    required string type = 2;
+    optional string description = 3;
+}

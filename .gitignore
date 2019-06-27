@@ -16,8 +16,8 @@ dist/
 mitmproxy/contrib/kaitaistruct/*.ksy
 .pytest_cache
 __pycache__
-saves/*
-fake_server/*
+data/*
+proto/*
 last_session
 
 # UI
