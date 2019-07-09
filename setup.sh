@@ -32,6 +32,10 @@ protoc --proto_path . --python_out=$PYTHON_PROTO_PATH $(find .  -type f -name '*
 cp ../init.py $PYTHON_PROTO_PATH/__init__.py
 set -
 
+cd ..
+git ls-files -z 'proto/' | xargs -0 git update-index --assume-unchanged
+git ls-files -z 'data/' | xargs -0 git update-index --assume-unchanged
+
 echo "Installation is finished"
 echo "Now you can start working with mitmpoxy and rewrite addon usind '. run_mitm.sh'"
 
