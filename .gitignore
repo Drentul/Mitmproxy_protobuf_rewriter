@@ -2,7 +2,7 @@
 MANIFEST
 **/tmp
 /venv*
-*.py[cdo]
+*.py[cod]
 *.swp
 *.swo
 *.sqlite
@@ -13,21 +13,8 @@ MANIFEST
 .tox*/
 build/
 dist/
-mitmproxy/contrib/kaitaistruct/*.ksy
 .pytest_cache
 __pycache__
 data/*
 proto/*
 last_session
-
-# UI
-
-node_modules
-bower_components
-*.map
-sslkeylogfile.log
-.tox/
-.python-version
-coverage.xml
-web/coverage/
-.mypy_cache/
