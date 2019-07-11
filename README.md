@@ -31,23 +31,24 @@ The data needed to manage the add-on are in the /data folder.
 **/data/config.json** - The file contains a set of rules specified in the json format. They are used to define actions that will be performed on passing requests. Actions such as: changing the headers, response code, saving or rewriting the content, adding a delay.
 
 Format of one rule:
-'''
+
+```
 [
   {
-   "is_on": true,							//OPTIONAL: default: true
-   "delay": 3,								//OPTIONAL: default: 0 //In seconds
-   "authority_expr": "example.com",			//OPTIONAL: default: any
-   "path_expr": "/example_path",			//OPTIONAL: default: any
-   "method": ["GET"],						//OPTIONAL: default: ["GET", "POST", "PUT", "DELETE"]
-   "save_content": "some_name.txt",			//OPTIONAL: default: None
+   "is_on": true,				//OPTIONAL: default: true
+   "delay": 3,					//OPTIONAL: default: 0 //In seconds
+   "authority_expr": "example.com",		//OPTIONAL: default: any
+   "path_expr": "/example_path",		//OPTIONAL: default: any
+   "method": ["GET"],				//OPTIONAL: default: ["GET", "POST", "PUT", "DELETE"]
+   "save_content": "some_name.txt",		//OPTIONAL: default: None
    "rewrite_content": "SampleRewrite",		//OPTIONAL: default: None
-   "status_code": 200,						//OPTIONAL: default: None
-   "headers": {								//OPTIONAL: default: None
+   "status_code": 200,				//OPTIONAL: default: None
+   "headers": {					//OPTIONAL: default: None
     "Content-Type": "Peace_of_cake"
    }
   }
 ]
-'''
+```
 
 Notes:
 Saving will occur as "some_name<counter>.txt", where counter is 1, 2, 3... and so on.
