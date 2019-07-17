@@ -23,13 +23,27 @@ pip3 install -r ../requirements.txt
 
 python3 ../add_pythonpath.py
 
-export PYTHON_PROTO_PATH="$VIRTUAL_ENV/lib/python3.6/site-packages/proto_py"
+export PYTHON_PROTO_PATH="$VIRTUAL_ENV/lib/python3.6/site-packages/proto_py/"
 
 cd ../proto
 
-mkdir -p $PYTHON_PROTO_PATH
-protoc --proto_path . --python_out=$PYTHON_PROTO_PATH $(find .  -type f -name '*.proto')
-cp ../init.py $PYTHON_PROTO_PATH/__init__.py
+rm -rf "$PYTHON_PROTO_PATH"
+
+mkdir -p "$PYTHON_PROTO_PATH"
+
+IFS=$'\n'; set -f #This is needed for processing files and dirs with space ' ' symbol
+dirs=`find . -maxdepth 1 -mindepth 1 -type d`
+for dir in $dirs
+do
+    for file in `find "$dir" -type f -name '*.proto'`
+        do
+            mkdir -p "$PYTHON_PROTO_PATH${dir##*/}" #This is for creating dir only for proto files there
+            protoc --proto_path="$dir" --python_out="$PYTHON_PROTO_PATH${dir##*/}" "$file"
+        done
+done
+unset IFS; set +f
+
+cp ../init.py "$PYTHON_PROTO_PATH/__init__.py"
 set -
 
 cd ..
