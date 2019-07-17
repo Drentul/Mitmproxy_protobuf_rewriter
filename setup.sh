@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set +e
+
 IsLibInstalled()
 {
 which $1 >/dev/null
