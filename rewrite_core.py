@@ -121,7 +121,7 @@ class Rewriter:
     def __init__(self, config_file_path: str, saving_dir: str,
                  rewriting_dir: str, api_rules_dir: str,
                  example_config_file_path: str, example_rewriting_dir: str,
-                 example_api_rules_file: str):
+                 example_api_rules_dir: str):
 
         if (os.path.isfile(config_file_path)):
             self.config_file_path = config_file_path

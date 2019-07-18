@@ -19,11 +19,11 @@ SAVING_DIR = 'data/saves'
 # Way to api rules files
 API_RULES_DIR = 'data/api_rules'
 # Name of example api rules file. Works only if there are no one other
-EXAMPLE_API_RULES_FILE = 'data/api_rules/example'
+EXAMPLE_API_RULES_DIR = 'data/api_rules/example'
 
 addons = [
     rewrite_core.Rewriter(CONFIG_FILE_PATH, SAVING_DIR,
                           REWRITING_DIR, API_RULES_DIR,
                           EXAMPLE_CONFIG_FILE_PATH, EXAMPLE_REWRITING_DIR,
-                          EXAMPLE_API_RULES_FILE)
+                          EXAMPLE_API_RULES_DIR)
 ]
