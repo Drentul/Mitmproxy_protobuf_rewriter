@@ -119,13 +119,23 @@ class Rewriter:
     '''Class for capturing and rewriting some requests and responses'''
 
     def __init__(self, config_file_path: str, saving_dir: str,
-                 rewriting_dir: str, api_rules_dir: str):
-        self.config_file_path = config_file_path
+                 rewriting_dir: str, api_rules_dir: str,
+                 example_config_file_path: str, example_rewriting_dir: str,
+                 example_api_rules_file: str):
+
+        if (os.path.isfile(config_file_path)):
+            self.config_file_path = config_file_path
+            self.rewriting_dir = rewriting_dir
+            self.api_rules_dir = api_rules_dir
+        else:
+            self.config_file_path = example_config_file_path
+            self.rewriting_dir = example_rewriting_dir
+            self.api_rules_dir = example_api_rules_dir
+
         with open(self.config_file_path) as config:
             self.config_json = json.load(config)
+                
         self.saving_dir = saving_dir
-        self.rewriting_dir = rewriting_dir
-        self.api_rules_dir = api_rules_dir
 
         self.api_map = []
         api_files = [f for f in listdir(self.api_rules_dir) if
