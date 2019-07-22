@@ -9,7 +9,7 @@ import os
 import re
 import json
 import time
-from os import listdir
+from os import listdir, unlink
 from os.path import isfile, join, dirname, exists, splitext
 from urllib.parse import urlparse
 from google.protobuf import json_format
@@ -134,15 +134,17 @@ class Rewriter:
 
         with open(self.config_file_path) as config:
             self.config_json = json.load(config)
-                
+
         self.saving_dir = saving_dir
 
-        self.api_map = []
+        # Такая структура нужна для возможности потом перезаписать файлы
+        # так как они использовалсь в качестве источников
+        self.api_map = [] # list of tuples [(json, string_file_name), ..]
         api_files = [f for f in listdir(self.api_rules_dir) if
                      isfile(join(self.api_rules_dir, f))]
         for api_file in api_files:
             with open(join(self.api_rules_dir, api_file)) as json_api_rule:
-                self.api_map.append(json.load(json_api_rule))
+                self.api_map.append((json.load(json_api_rule), api_file))
 
         self.reloadtask = None
         self.reloadtask = asyncio.ensure_future(self.watcher())
@@ -170,6 +172,44 @@ class Rewriter:
                 reload_addon()
 
             await asyncio.sleep(ReloadInterval)
+
+    def save_api_map(self) -> None:
+        '''Method saves api map to files'''
+
+        # Remove all files
+        for the_file in listdir(self.api_rules_dir):
+            file_path = join(self.api_rules_dir, the_file)
+            try:
+                if isfile(file_path):
+                    unlink(file_path)
+            except Exception as e:
+                ctx.log.info(e)
+
+        # Creating files and writes jsons to it
+        for api in self.api_map:
+            with open(join(self.api_rules_dir, api[1]), 'w+') as api_file:
+                json.dump(api[0], api_file, indent=4)
+
+    def add_rule_to_config_json(self, rule) -> None:
+        '''Method adds rule to config'''
+
+        pass
+
+    def remove_rule_from_config(self, rule) -> None:
+        '''Method removes rule from config'''
+
+        pass
+
+    def update_rule_in_config(self, rule) -> None:
+        '''Method changes rule in config'''
+
+        pass
+
+    def save_config(self) -> None:
+        '''Method saves config with rules'''
+
+        with open(self.config_file_path) as config:
+            json.dump(self.config_json, config)
 
     def find_rule(self, flow: http.HTTPFlow) -> dict:
         '''Method searches for rule in config, that
@@ -208,18 +248,19 @@ class Rewriter:
         method = flow.request.method
 
         for api in self.api_map:
-            if url_authority not in api.get('server'):
+            if url_authority not in api[0].get('server'):
                 continue
-            rules = api.get('rules')
+            rules = api[0].get('rules')
             for rule in rules:
                 if (re.match('^/*' + rule.get('path', '') + '$', url_path) and
                         re.match(rule.get('method', '.*'), method)):
                     return_rule = rule
-                    return_rule.update({"errors": api.get("errors")})
+                    return_rule.update({"errors": api[0].get("errors")})
                     return return_rule
         return None
 
     # ctx.log.info почему-то несовместим с конкурентом ???
+    # А нужен ли конкурент? https://discourse.mitmproxy.org/t/logging-and-threads/834
     @concurrent
     def request(self, flow: http.HTTPFlow) -> None:
         '''Method calls when the full HTTP request has been read
