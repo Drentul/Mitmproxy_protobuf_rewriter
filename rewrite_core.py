@@ -9,14 +9,15 @@ import os
 import re
 import json
 import time
+import threading
 from os import listdir, unlink
-from os.path import isfile, join, dirname, exists, splitext
 from urllib.parse import urlparse
-from google.protobuf import json_format
-from proto_py import *
 from mitmproxy import http
-from mitmproxy.script import concurrent
 from mitmproxy import ctx
+import GUI
+import helper
+
+# FIX: After the first reboot of the addon, the closure of the gui breaks
 
 
 # By this name we can find this addon in addon manager
@@ -24,95 +25,48 @@ script_name = 'rewrite.py'
 ReloadInterval = 1
 
 
-def reload_addon():
+def reload_addon() -> None:
     '''Func reloads this addon'''
 
     addon = ctx.master.addons.get('scriptmanager:' + script_name)
     addon.loadscript()
 
+class SingletonWatcher(object):
 
-def find_free_name_in_path(full_path: str) -> str:
-    directory = dirname(full_path)
-    if not exists(directory):
-        os.makedirs(directory)
-    counter = 1
-    file_name, file_extension = splitext(full_path)
-    while True:
-        changed_path = file_name + str(counter) + file_extension
-        if not exists(changed_path):
-            return changed_path
-        counter = counter + 1
+    def __new__(cls):
+        if not hasattr(cls, 'instance'):
+            cls.instance = super(SingletonWatcher, cls).__new__(cls)
+        return cls.instance
 
+    async def watch(self, config_file_path):
+        '''Method watches for some conditions, than calls addon reload'''
+        last_mtime = 0
+        while True:
+            try:
+                mtime = os.stat(config_file_path).st_mtime
+            except FileNotFoundError:
+                ctx.log.info('Removing script' + script_name)
+                scripts = list(ctx.options.scripts)
+                scripts.remove('rewrite.py')
+                ctx.options.update(scripts=scripts)
+                return
+            if last_mtime == 0:
+                last_mtime = mtime
+            if mtime > last_mtime:
+                last_mtime = mtime  # Don't need to repeat this steps
+                reload_addon()
 
-def to_camel_case(snake_str: str) -> str:
-    '''Translates snake_case style string to camelCase style'''
+            await asyncio.sleep(ReloadInterval)
 
-    components = snake_str.split('_')
-    return components[0] + ''.join(x.title() for x in components[1:])
+    def start(self, config_file_path):
+        self.task = asyncio.ensure_future(self.watch(config_file_path))
 
-
-def camel_json(json_file) -> None:
-    '''Recursively iterates json for all dictionary keys in it
-    and translates into camelCase'''
-
-    for key in json_file:
-        if isinstance(json_file, dict):
-            new_key = to_camel_case(key)
-            sub_js = json_file[new_key] = json_file.pop(key)
-
-        if isinstance(json_file, list):
-            sub_js = key
-
-        if isinstance(sub_js, (dict, list)):
-            camel_json(sub_js)
+    def stop(self):
+        if self.task:
+            self.task.cancel()
 
 
-def rewrite_body_by_json(flow_response_or_request, json_obj, msg_types) -> None:
-    '''Method rewrites content in request or response by
-    json encoded to protobuf object of specified type'''
-
-    msg = None
-    for msg_type in msg_types:
-        try:
-            msg = msg_type()
-            json_format.Parse(
-                json.dumps(json_obj),
-                msg,
-                ignore_unknown_fields=False)
-            break
-        except json_format.ParseError:
-            continue
-    flow_response_or_request.content = msg.SerializeToString()
-
-
-def find_protobuf_message_class(api_rule: dict):
-    '''Method finds protobuf message that is eligible to api rules'''
-
-    proto_message = api_rule.get('proto_message', None)
-    if proto_message == 'text':
-        return proto_message
-    module = api_rule.get('module', None)
-
-    for message in clsmembers:
-        if (message.__name__ == proto_message and
-                (module is None or message.__module__ == module)):
-            return message
-    return None
-
-
-def find_errors_protobuf_messages(api_rule: dict) -> list:
-    '''Method finds protobuf messages for errors from this api rule'''
-
-    errors = api_rule.get("errors")
-    if errors is None:
-        return None
-    errors_list = []
-
-    for error in errors:
-        err = find_protobuf_message_class(error)
-        if err is not None:
-            errors_list.append(err)
-    return errors_list
+# singleton_watcher = SingletonWatcher() # Temporarily disabled
 
 
 class Rewriter:
@@ -123,6 +77,7 @@ class Rewriter:
                  example_config_file_path: str, example_rewriting_dir: str,
                  example_api_rules_dir: str):
 
+        ctx.log.info('Creating addon object')
         if (os.path.isfile(config_file_path)):
             self.config_file_path = config_file_path
             self.rewriting_dir = rewriting_dir
@@ -139,81 +94,96 @@ class Rewriter:
 
         # Такая структура нужна для возможности потом перезаписать файлы
         # так как они использовалсь в качестве источников
-        self.api_map = [] # list of tuples [(json, string_file_name), ..]
+        self.api_map = []  # list of tuples [(json, string_file_name), ..]
         api_files = [f for f in listdir(self.api_rules_dir) if
-                     isfile(join(self.api_rules_dir, f))]
+                     os.path.isfile(os.path.join(self.api_rules_dir, f))]
         for api_file in api_files:
-            with open(join(self.api_rules_dir, api_file)) as json_api_rule:
+            with open(os.path.join(self.api_rules_dir, api_file)) as json_api_rule:
                 self.api_map.append((json.load(json_api_rule), api_file))
 
-        self.reloadtask = None
-        self.reloadtask = asyncio.ensure_future(self.watcher())
+        # singleton_watcher.start(self.config_file_path)  # Temporarily disabled
+        # ctx.log.info('Created new reloading watcher')
+
+        self.gui = None
+        self.gui = GUI.GUI()
+        ctx.log.info("Created new GUI")
 
     def done(self):
         '''This method runs at the end of the addons life'''
-        if self.reloadtask:
-            self.reloadtask.cancel()
+        if self.gui is not None and self.gui.isAlive():
+            self.gui.quit()
+            self.gui.root.update_idletasks()
+            self.gui.join()
+        # singleton_watcher.stop() # Temporarily disabled
+        ctx.log.info('Closing addon function. Stops all.')
 
-    async def watcher(self):
-        '''Method watches for some conditions, than calls addon reload'''
-        last_mtime = 0
-        while True:
-            try:
-                mtime = os.stat(self.config_file_path).st_mtime
-            except FileNotFoundError:
-                ctx.log.info('Removing script' + script_name)
-                scripts = list(ctx.options.scripts)
-                scripts.remove('rewrite.py')
-                ctx.options.update(scripts=scripts)
-                return
-            if last_mtime == 0:
-                last_mtime = mtime
-            if mtime > last_mtime:
-                reload_addon()
+    def change_api_map(self) -> None:
+        '''Method changes runtime api_map by new rules'''
 
-            await asyncio.sleep(ReloadInterval)
+        # Add code when GUI
+        pass
 
     def save_api_map(self) -> None:
         '''Method saves api map to files'''
 
         # Remove all files
         for the_file in listdir(self.api_rules_dir):
-            file_path = join(self.api_rules_dir, the_file)
+            file_path = os.path.join(self.api_rules_dir, the_file)
             try:
-                if isfile(file_path):
+                if os.path.isfile(file_path):
                     unlink(file_path)
             except Exception as e:
                 ctx.log.info(e)
 
         # Creating files and writes jsons to it
         for api in self.api_map:
-            with open(join(self.api_rules_dir, api[1]), 'w+') as api_file:
+            with open(os.path.join(self.api_rules_dir, api[1]), 'w+') as api_file:
                 json.dump(api[0], api_file, indent=4)
 
-    def add_rule_to_config_json(self, rule) -> None:
-        '''Method adds rule to config'''
+    def find_api(self, flow: http.HTTPFlow) -> dict:
+        '''Method searches for API in config (api_map), that
+        is match to current request. Then returns this API as dictionary.'''
 
-        pass
+        url = urlparse(flow.request.pretty_url)
+        url_authority = url.netloc.split(':', 1)[0]
+        url_path = url.path
+        method = flow.request.method
 
-    def remove_rule_from_config(self, rule) -> None:
-        '''Method removes rule from config'''
+        for api in self.api_map:
+            find_server = False  # Flag for searching
 
-        pass
+            for server in api[0].get('server'):
+                if re.match(server, url_authority):
+                    find_server = True
 
-    def update_rule_in_config(self, rule) -> None:
-        '''Method changes rule in config'''
+            if not find_server:
+                continue
 
+            rules = api[0].get('rules')
+
+            for rule in rules:
+                if (re.match('^/*' + rule.get('path', '.*') + '$', url_path) and
+                        re.match(rule.get('method', '.*'), method)):
+                    return_rule = rule
+                    return_rule.update({"errors": api[0].get("errors")})
+                    return return_rule
+        return None
+
+    def change_config(self) -> None:
+        '''Method changes runtime config by new rules'''
+
+        # Add code when GUI
         pass
 
     def save_config(self) -> None:
         '''Method saves config with rules'''
 
-        with open(self.config_file_path) as config:
-            json.dump(self.config_json, config)
+        with open(self.config_file_path, 'w+') as config:
+            json.dump(self.config_json, config, indent=4)
 
     def find_rule(self, flow: http.HTTPFlow) -> dict:
         '''Method searches for rule in config, that
-        is match to current request. Then returns this rule as dictionary.'''
+        is match to current request. Then returns this rule as a dictionary.'''
 
         url = urlparse(flow.request.pretty_url)
         url_authority = url.netloc.split(':', 1)[0]
@@ -238,46 +208,25 @@ class Rewriter:
             return rule
         return None
 
-    def find_api(self, flow: http.HTTPFlow) -> dict:
-        '''Method searches for API in config (api_map), that
-        is match to current request. Then returns this API as dictionary.'''
-
-        url = urlparse(flow.request.pretty_url)
-        url_authority = url.netloc.split(':', 1)[0]
-        url_path = url.path
-        method = flow.request.method
-
-        for api in self.api_map:
-            if url_authority not in api[0].get('server'):
-                continue
-            rules = api[0].get('rules')
-            for rule in rules:
-                if (re.match('^/*' + rule.get('path', '') + '$', url_path) and
-                        re.match(rule.get('method', '.*'), method)):
-                    return_rule = rule
-                    return_rule.update({"errors": api[0].get("errors")})
-                    return return_rule
-        return None
-
-    # ctx.log.info почему-то несовместим с конкурентом ???
-    # А нужен ли конкурент? https://discourse.mitmproxy.org/t/logging-and-threads/834
-    @concurrent
+# Needs to do something with async. Concurrent is a treat to overflow.
+#    @concurrent
     def request(self, flow: http.HTTPFlow) -> None:
         '''Method calls when the full HTTP request has been read
         It searches for the eligible rule in config
         and then replaces request content according to it'''
 
-        rule = self.find_rule(flow)
-        if rule is None:
-            return
+    #        rule = self.find_rule(flow)
+    #        if rule is None:
+    #            return
+    #
+    #        # Bad internet settings: delay, loss
+    #
+    #        delay = rule.get('delay', None)
+    #        if delay not in (None, ''):
+    #            time.sleep(delay)
 
-        # Bad internet settings: delay, loss
+        pass
 
-        delay = rule.get('delay', None)
-        if delay not in (None, ''):
-            time.sleep(delay)
-
-    # @concurrent
     def response(self, flow: http.HTTPFlow) -> None:
         '''Method calls when the full HTTP response has been read
         It searches for the eligible rule in config
@@ -307,9 +256,9 @@ class Rewriter:
                           + self.api_rules_dir + " directory.")
             return
 
-        errors_msg_types = find_errors_protobuf_messages(api_rule)
+        errors_msg_types = helper.find_errors_protobuf_messages(api_rule)
 
-        protobuf_msg_type = find_protobuf_message_class(api_rule)
+        protobuf_msg_type = helper.find_protobuf_message_class(api_rule)
         if protobuf_msg_type is None:
             ctx.log.error("Can't find protobuf message for this request: "
                           + flow.request.pretty_url + ". Please check it in "
@@ -321,18 +270,15 @@ class Rewriter:
         save_content_path = rule.get('save_content', None)
         if save_content_path not in (None, ''):
             # Finding free path for saving
-            full_path = join(self.saving_dir, save_content_path)
-            free_path = find_free_name_in_path(full_path)
+            full_path = os.path.join(self.saving_dir, save_content_path)
+            free_path = helper.find_free_name_in_path(full_path)
 
             # Saving process
             if protobuf_msg_type == 'text':
                 content = flow.response.text
             else:
-                protobuf_message = protobuf_msg_type()
-                protobuf_message.ParseFromString(flow.response.content)
-                json_obj = json_format.MessageToJson(protobuf_message,
-                                                     preserving_proto_field_name=True)
-                content = json_obj.encode().decode("unicode-escape")
+                content = helper.save_body_as_json(flow.response,
+                                                   protobuf_msg_type)
 
             with open(free_path, "w") as save_file:
                 save_file.write(content)
@@ -342,18 +288,18 @@ class Rewriter:
         rewrite_content_path = rule.get('rewrite_content', None)
         if rewrite_content_path not in (None, ''):
             # Rewriting process
-            with open(join(self.rewriting_dir,
+            with open(os.path.join(self.rewriting_dir,
                       rewrite_content_path)) as content_file:
                 if protobuf_msg_type == 'text':
                     text = content_file.read()
                     flow.response.text = text
                 else:
                     json_obj = json.load(content_file)
-                    camel_json(json_obj)
+                    helper.camel_json(json_obj)
 
-                    if 200 <= flow.response.status_code < 300 or not ERRORS:
+                    if 200 <= flow.response.status_code < 300 or not errors_msg_types:
                         msg_types = [protobuf_msg_type]
                     else:
                         msg_types = errors_msg_types
 
-                    rewrite_body_by_json(flow.response, json_obj, msg_types)
+                    helper.rewrite_body_by_json(flow.response, json_obj, msg_types)
