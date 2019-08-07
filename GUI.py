@@ -13,13 +13,11 @@ from mitmproxy import ctx
 class GUI(threading.Thread):
 
     def __init__(self):
-        #ctx.log.info('Creating new GUI')
         threading.Thread.__init__(self)
         self.start()
-    
+
     def quit(self):
         if self.root is not None:
-            #print(self.root.winfo_exists())
             self.root.quit()  # Leave mainloop
 
     def callback(self):
@@ -30,10 +28,10 @@ class GUI(threading.Thread):
     def run(self):
         self.root = tkinter.Tk()
         self.root.protocol("WM_DELETE_WINDOW", self.callback)
-        
+
         label = tkinter.Label(self.root, text="Hello World")
         label.pack()
-        
+
         self.root.mainloop()
 
         #  ctx.log.info('End of GUI life')

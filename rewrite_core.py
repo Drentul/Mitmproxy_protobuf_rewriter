@@ -31,7 +31,10 @@ def reload_addon() -> None:
     addon = ctx.master.addons.get('scriptmanager:' + script_name)
     addon.loadscript()
 
+
 class SingletonWatcher(object):
+    '''Singleton class for running watching
+    task that reloads addon by the condition'''
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):
