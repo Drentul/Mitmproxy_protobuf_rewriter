@@ -108,7 +108,7 @@ class Rewriter:
         # ctx.log.info('Created new reloading watcher')
 
         self.gui = None
-        self.gui = GUI.GUI()
+        self.gui = GUI.GUI(self.config_json, self.api_map)
         ctx.log.info("Created new GUI")
 
     def done(self):
