@@ -114,8 +114,7 @@ class Rewriter:
     def done(self):
         '''This method runs at the end of the addons life'''
         if self.gui is not None and self.gui.isAlive():
-            self.gui.quit()
-            self.gui.root.update_idletasks()
+            self.gui.close()
             self.gui.join()
         # singleton_watcher.stop() # Temporarily disabled
         ctx.log.info('Closing addon function. Stops all.')
