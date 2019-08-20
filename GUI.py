@@ -47,12 +47,12 @@ class Window:
             self.subwindow.close_childs_recursive()
         self.close()
 
-    def open_window(self, window_class, value_for_rewrite) -> None:
+    def open_window(self, window_class, config) -> None:
 
         def wrapper(_window_class=window_class,
-                    _value_for_rewrite=value_for_rewrite):
+                    _config=config):
 
-            self.subwindow = _window_class(self.window, _value_for_rewrite[0])
+            self.subwindow = _window_class(self.window, _config)
             self.return_value = self.subwindow.go()
 
             del self.subwindow
@@ -60,12 +60,35 @@ class Window:
             if self.flag_for_delete is True:
                 return
 
-            if self.return_value and value_for_rewrite:
-                _value_for_rewrite[0] = self.return_value
+            if self.return_value and _config:
+                _config.config = self.return_value
 
             self.draw()
 
         return wrapper
+
+
+class Config:
+    '''Represents object that stores json config'''
+
+    def __init__(self, config, button=None, path=None, name=''):
+        self.name = name
+        self.path = path
+        self._config = config
+        self.button = button
+        self.config_mutex = threading.Lock()
+
+    config = property()
+
+    @config.getter
+    def config(self):
+        with self.config_mutex:
+            return self._config
+
+    @config.setter
+    def config(self, value):
+        with self.config_mutex:
+            self._config = value
 
 
 class GUI(threading.Thread, Window):
@@ -76,8 +99,8 @@ class GUI(threading.Thread, Window):
         self.master = None
         self.subwindow = None
         self.flag_for_delete = False
-        self.config_json = [config_json]
-        self.api_map = [api_map]
+        self.config_json = Config(config_json)
+        self.api_map = Config(api_map)
         self.start()
 
     def go(self):
@@ -131,7 +154,16 @@ class ApiMapWindow(Window):
         Window.__init__(self, master)
 
         self.api_map = api_map
-        self.api_buttons = []  # List of lists [[ json_api, Button ]]
+
+        self.api_list = []
+
+        for api in self.api_map.config:
+            config = Config(api, button=Button(self.window),
+                            name=api.get("file_path", "no_name"))
+            self.api_list.append(config)
+
+        for api in self.api_list:
+            api.button.grid(row=0, column=0, columnspan=2)
 
         filenames_frame = Frame(self.window)
         filenames_frame.grid(row=0, column=0, columnspan=2)
@@ -143,12 +175,6 @@ class ApiMapWindow(Window):
         save_button_frame.grid(row=1, column=0, columnspan=3)
         close_button_frame = Frame(self.window)
         close_button_frame.grid(row=1, column=3, columnspan=3)
-
-        for api in self.api_map:
-            self.api_buttons.append([api, Button(self.window)])
-
-        for rule, btn in self.api_buttons:
-            btn.grid(row=0, column=0, columnspan=2)
 
         self.text = Text(self.window,
                          background='white')
@@ -165,18 +191,16 @@ class ApiMapWindow(Window):
 
     def save_and_exit(self):
         api_map = []
-        for rule, btn in self.api_buttons:
-            api_map.append(rule)
+        for api in self.api_list:
+            api_map.append(api.config)
         self.new_value = api_map
         self.window.destroy()
 
     def draw(self):
-        for api_and_btn in self.api_buttons:
-            api = api_and_btn[0]
-            btn = api_and_btn[1]
-            btn["text"] = api[1]
-            btn["command"] = self.open_window(ModalWindow,
-                                              api_and_btn)
+        for api in self.api_list:
+            api.button["text"] = api.name
+            api.button["command"] = self.open_window(ModalWindow,
+                                                     api)
 
 
 class ConfigWindow(Window):
@@ -184,13 +208,13 @@ class ConfigWindow(Window):
         Window.__init__(self, master)
 
         self.config_json = config_json
-        self.rule_buttons = []  # List of lists [[ json_rule, Button ]]
+        self.rule_list = []
 
-        for rule in self.config_json:
-            self.rule_buttons.append([rule, Button(self.window)])
-
-        for rule, btn in self.rule_buttons:
-            btn.pack(side=TOP, fill=BOTH)
+        for rule in self.config_json.config:
+            button = Button(self.window)
+            config = Config(rule, button)
+            self.rule_list.append(config)
+            button.pack(side=TOP, fill=BOTH)
 
         buttons_frame = Frame(self.window)
         buttons_frame.pack(side=BOTTOM)
@@ -201,22 +225,20 @@ class ConfigWindow(Window):
 
     def save_and_exit(self):
         config_json = []
-        for rule, btn in self.rule_buttons:
-            config_json.append(rule)
+        for rule in self.rule_list:
+            config_json.append(rule.config)
         self.new_value = config_json
         self.window.destroy()
 
     def draw(self):
-        for rule_and_btn in self.rule_buttons:
-            rule = rule_and_btn[0]
-            btn = rule_and_btn[1]
-            btn["text"] = rule.get('path_expr', '.*')
-            btn["command"] = self.open_window(ModalWindow,
-                                              rule_and_btn)
+        for rule in self.rule_list:
+            rule.button["text"] = rule.config.get('path_expr', '.*')
+            rule.button["command"] = self.open_window(ModalWindow,
+                                                      rule)
 
 
 class ModalWindow(Window):
-    def __init__(self, master, json_obj):
+    def __init__(self, master, config):
         Window.__init__(self, master)
 
         self.save_btn = Button(self.window, text='Save',
@@ -230,7 +252,7 @@ class ModalWindow(Window):
         self.text.pack(side=TOP,
                        fill=BOTH,
                        expand=YES)
-        text = json.dumps(json_obj, indent=4)
+        text = json.dumps(config.config, indent=4)
         self.text.insert('0.0', text)
 
     def save_and_exit(self):

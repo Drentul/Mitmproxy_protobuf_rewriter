@@ -91,24 +91,25 @@ class Rewriter:
             self.api_rules_dir = example_api_rules_dir
 
         with open(self.config_file_path) as config:
-            self.config_json = json.load(config)
+            config_json = json.load(config)
 
         self.saving_dir = saving_dir
 
         # Такая структура нужна для возможности потом перезаписать файлы
         # так как они использовалсь в качестве источников
-        self.api_map = []  # list of tuples [(json, string_file_name), ..]
+        api_map = []  # list of tuples [(json, string_file_name), ..]
         api_files = [f for f in listdir(self.api_rules_dir) if
                      os.path.isfile(os.path.join(self.api_rules_dir, f))]
         for api_file in api_files:
             with open(os.path.join(self.api_rules_dir, api_file)) as json_api_rule:
-                self.api_map.append((json.load(json_api_rule), api_file))
+                api_rule = json.load(json_api_rule)
+                api_rule.update({"file_path": api_file})
+                api_map.append(api_rule)
 
         # singleton_watcher.start(self.config_file_path)  # Temporarily disabled
         # ctx.log.info('Created new reloading watcher')
 
-        self.gui = None
-        self.gui = GUI.GUI(self.config_json, self.api_map)
+        self.gui = GUI.GUI(config_json, api_map)
         ctx.log.info("Created new GUI")
 
     def done(self):
@@ -118,12 +119,6 @@ class Rewriter:
             self.gui.join()
         # singleton_watcher.stop() # Temporarily disabled
         ctx.log.info('Closing addon function. Stops all.')
-
-    def change_api_map(self) -> None:
-        '''Method changes runtime api_map by new rules'''
-
-        # Add code when GUI
-        pass
 
     def save_api_map(self) -> None:
         '''Method saves api map to files'''
@@ -138,7 +133,7 @@ class Rewriter:
                 ctx.log.info(e)
 
         # Creating files and writes jsons to it
-        for api in self.api_map:
+        for api in self.gui.api_map.config:
             with open(os.path.join(self.api_rules_dir, api[1]), 'w+') as api_file:
                 json.dump(api[0], api_file, indent=4)
 
@@ -151,37 +146,31 @@ class Rewriter:
         url_path = url.path
         method = flow.request.method
 
-        for api in self.api_map:
+        for api in self.gui.api_map.config:
             find_server = False  # Flag for searching
 
-            for server in api[0].get('server'):
+            for server in api.get('server'):
                 if re.match(server, url_authority):
                     find_server = True
 
             if not find_server:
                 continue
 
-            rules = api[0].get('rules')
+            rules = api.get('rules')
 
             for rule in rules:
                 if (re.match('^/*' + rule.get('path', '.*') + '$', url_path) and
                         re.match(rule.get('method', '.*'), method)):
                     return_rule = rule
-                    return_rule.update({"errors": api[0].get("errors")})
+                    return_rule.update({"errors": api.get("errors")})
                     return return_rule
         return None
-
-    def change_config(self) -> None:
-        '''Method changes runtime config by new rules'''
-
-        # Add code when GUI
-        pass
 
     def save_config(self) -> None:
         '''Method saves config with rules'''
 
         with open(self.config_file_path, 'w+') as config:
-            json.dump(self.config_json, config, indent=4)
+            json.dump(self.gui.config_json.config, config, indent=4)
 
     def find_rule(self, flow: http.HTTPFlow) -> dict:
         '''Method searches for rule in config, that
@@ -191,7 +180,7 @@ class Rewriter:
         url_authority = url.netloc.split(':', 1)[0]
         url_path = url.path
 
-        for rule in self.config_json:
+        for rule in self.gui.config_json.config:
             is_on = rule.get('is_on', True)
             is_match_authority = re.match(rule.get('authority_expr',
                                                    '.*'), url_authority)
