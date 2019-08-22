@@ -2,6 +2,7 @@
 Graphical user interface based on Tkinter standard library
 '''
 
+from abc import ABCMeta, abstractmethod, abstractproperty
 from tkinter import *
 from tkinter import messagebox
 import threading
@@ -17,7 +18,9 @@ def proxy_shutdown() -> None:
     ctx.master.shutdown()
 
 
-class Window:
+class Window(metaclass=ABCMeta):
+    '''Base class for all windows in the GUI'''
+
     def __init__(self, master):
         self.window = Toplevel(master)
         self.window.protocol("WM_DELETE_WINDOW", self.close_childs_recursive)
@@ -26,7 +29,8 @@ class Window:
         self.flag_for_delete = False
 
     def go(self):
-        self.draw()
+        '''The main functionality'''
+        self.draw()  # Method for updating all infos in components
         self.new_value = None
         self.window.transient(self.master)
         self.window.grab_set()
@@ -35,19 +39,25 @@ class Window:
         return self.new_value
 
     def close(self):
+        '''Closes this window'''
         if self.window is not None:
             self.window.destroy()
 
+    @abstractmethod
     def draw(self):
-        pass
+        '''Updates all components'''
 
     def close_childs_recursive(self):
+        '''Closes all this window childs and then this window'''
         self.flag_for_delete = True
         if self.subwindow is not None:
             self.subwindow.close_childs_recursive()
         self.close()
 
     def open_window(self, window_class, config) -> None:
+        '''Opens new window as a child of current. Then passes control
+        to him and waits for the completion of his work with some result.
+        Returns a parameterized function as a result'''
 
         def wrapper(_window_class=window_class,
                     _config=config):
@@ -69,7 +79,7 @@ class Window:
 
 
 class Config:
-    '''Represents object that stores json config'''
+    '''Stores json config and methods for thread safe accessing to it'''
 
     def __init__(self, config, button=None, path=None, name=''):
         self.name = name
@@ -92,6 +102,7 @@ class Config:
 
 
 class GUI(threading.Thread, Window):
+    '''Main GUI window and a working thread'''
 
     def __init__(self, config_json, api_map):
         threading.Thread.__init__(self)
@@ -104,17 +115,25 @@ class GUI(threading.Thread, Window):
         self.start()
 
     def go(self):
+        '''Has no parent that can run this'''
         pass
 
     def close(self):
+        '''Overrides close of other windows'''
         self.window.quit()  # Leave mainloop
         proxy_shutdown()
 
+    def draw(self):
+        '''Don't need for this class now. It has no changes.'''
+        pass
+
     def quit_dialog(self):
+        '''Opens dialog window for quit'''
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             self.close_childs_recursive()
 
     def run(self):
+        '''This runs as a thread'''
         self.window = Tk()
         self.window.protocol("WM_DELETE_WINDOW", self.quit_dialog)
 
@@ -150,6 +169,8 @@ class GUI(threading.Thread, Window):
 
 
 class ApiMapWindow(Window):
+    '''Window for API map of our addon'''
+
     def __init__(self, master, api_map):
         Window.__init__(self, master)
 
@@ -190,6 +211,7 @@ class ApiMapWindow(Window):
                command=self.close_childs_recursive).grid(row=1, column=4)
 
     def save_and_exit(self):
+        '''Saves new config to parent window then closes this'''
         api_map = []
         for api in self.api_list:
             api_map.append(api.config)
@@ -197,6 +219,9 @@ class ApiMapWindow(Window):
         self.window.destroy()
 
     def draw(self):
+        '''Places new texts and and new commands to buttons'''
+        # TODO: Сделать так, чтобы здесь кнопки пересоздавались и заново
+        # размещались. Т.к. их кол-во может поменяться.
         for api in self.api_list:
             api.button["text"] = api.name
             api.button["command"] = self.open_window(ModalWindow,
@@ -204,6 +229,7 @@ class ApiMapWindow(Window):
 
 
 class ConfigWindow(Window):
+    '''Window that stores rules config that control the behavior of the addon'''
     def __init__(self, master, config_json):
         Window.__init__(self, master)
 
@@ -224,6 +250,9 @@ class ConfigWindow(Window):
                command=self.save_and_exit).pack(side=LEFT)
 
     def save_and_exit(self):
+        '''Saves new config to parent window then closes this'''
+
+        # TODO: Посмотреть, нельзя ли таки объединить методы под общим соусом
         config_json = []
         for rule in self.rule_list:
             config_json.append(rule.config)
@@ -231,6 +260,11 @@ class ConfigWindow(Window):
         self.window.destroy()
 
     def draw(self):
+        '''Places new texts and and new commands to buttons'''
+        # TODO: Сделать так, чтобы здесь кнопки пересоздавались и заново
+        # размещались. Т.к. их кол-во может поменяться.
+
+        # TODO: Посмотреть, нельзя ли таки объединить методы под общим соусом
         for rule in self.rule_list:
             rule.button["text"] = rule.config.get('path_expr', '.*')
             rule.button["command"] = self.open_window(ModalWindow,
@@ -238,6 +272,7 @@ class ConfigWindow(Window):
 
 
 class ModalWindow(Window):
+    '''Simple modal window with config in text panel and save button'''
     def __init__(self, master, config):
         Window.__init__(self, master)
 
@@ -255,6 +290,11 @@ class ModalWindow(Window):
         text = json.dumps(config.config, indent=4)
         self.text.insert('0.0', text)
 
+    def draw(self):
+        '''Don't need for this class now. It has no changes.'''
+        pass
+
     def save_and_exit(self):
+        '''Saves new config to parent window then closes this'''
         self.new_value = json.loads(self.text.get('0.0', END))
         self.window.destroy()
