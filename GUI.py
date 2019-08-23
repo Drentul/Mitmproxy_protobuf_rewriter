@@ -184,31 +184,17 @@ class ApiMapWindow(Window):
             self.api_list.append(config)
 
         for api in self.api_list:
-            api.button.grid(row=0, column=0, columnspan=2)
+            api.button.pack(side=TOP)
 
-        filenames_frame = Frame(self.window)
-        filenames_frame.grid(row=0, column=0, columnspan=2)
-        server_frame = Frame(self.window)
-        server_frame.grid(row=0, column=2, columnspan=2)
-        api_rules_frame = Frame(self.window)
-        api_rules_frame.grid(row=0, column=4, columnspan=2)
-        save_button_frame = Frame(self.window)
-        save_button_frame.grid(row=1, column=0, columnspan=3)
-        close_button_frame = Frame(self.window)
-        close_button_frame.grid(row=1, column=3, columnspan=3)
+        empty_frame = Frame(self.window, height=15)
+        empty_frame.pack(side=TOP)
 
-        self.text = Text(self.window,
-                         background='white')
-        self.text.grid(row=0, column=2, columnspan=2)
-
-        self.text = Text(self.window,
-                         background='white')
-        self.text.grid(row=0, column=4, columnspan=2)
-
-        Button(self.window, text="Save",
-               command=self.save_and_exit).grid(row=1, column=2, sticky='w')
-        Button(self.window, text="Close",
-               command=self.close_childs_recursive).grid(row=1, column=4)
+        buttons_frame = Frame(self.window)
+        buttons_frame.pack(side=BOTTOM)
+        Button(buttons_frame, text="Close",
+               command=self.close_childs_recursive).pack(side=RIGHT)
+        Button(buttons_frame, text="Save",
+               command=self.save_and_exit).pack(side=LEFT)
 
     def save_and_exit(self):
         '''Saves new config to parent window then closes this'''
