@@ -282,5 +282,9 @@ class ModalWindow(Window):
 
     def save_and_exit(self):
         '''Saves new config to parent window then closes this'''
-        self.new_value = json.loads(self.text.get('0.0', END))
+        try:
+            self.new_value = json.loads(self.text.get('0.0', END))
+        except json.JSONDecodeError:
+            messagebox.showinfo("Ошибка!", "Проверьте правильность введенного JSON")
+            return
         self.window.destroy()
