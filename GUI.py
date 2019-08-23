@@ -285,6 +285,8 @@ class ModalWindow(Window):
         try:
             self.new_value = json.loads(self.text.get('0.0', END))
         except json.JSONDecodeError:
-            messagebox.showinfo("Ошибка!", "Проверьте правильность введенного JSON")
+            messagebox.showerror("Ошибка!",
+                                 "Проверьте правильность введенного JSON",
+                                 parent=self.window)
             return
         self.window.destroy()
