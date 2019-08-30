@@ -81,7 +81,7 @@ class Rewriter:
                  example_api_rules_dir: str):
 
         ctx.log.info('Creating addon object')
-        if (os.path.isfile(config_file_path)):
+        if os.path.isfile(config_file_path):
             self.config_file_path = config_file_path
             self.rewriting_dir = rewriting_dir
             self.api_rules_dir = api_rules_dir

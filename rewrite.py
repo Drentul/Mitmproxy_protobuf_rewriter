@@ -1,12 +1,13 @@
-'''
+"""
 The addon is used to rewrite the content of passing traffic.
 In this file only sets paths to other files (data, configs, etc)
 and initiates the addon.
-'''
+"""
 
 import rewrite_core
 
 # Way to addons configuration file
+
 CONFIG_FILE_PATH = 'data/config.json'
 # Way to example configuration file. Works only if config.json is absent
 EXAMPLE_CONFIG_FILE_PATH = 'data/example_config.json'
