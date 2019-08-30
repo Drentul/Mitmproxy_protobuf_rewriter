@@ -1,19 +1,19 @@
 """
 Protobuf python sources are located at
 'mitmproxy/venv/lib/python3.6/site-packages/proto_py' path
-They are importes automatically by from proto_py import *
+They are imports automatically by from proto_py import *
 """
 
 import asyncio
+import json
 import os
 import re
-import json
-import time
-import threading
 from os import listdir, unlink
 from urllib.parse import urlparse
-from mitmproxy import http
+
 from mitmproxy import ctx
+from mitmproxy import http
+
 import GUI
 import helper
 
@@ -32,6 +32,27 @@ def reload_addon() -> None:
     addon.loadscript()
 
 
+async def watch(config_file_path):
+    """Task watches for some conditions, than calls addon reload"""
+    last_mtime = 0
+    while True:
+        try:
+            mtime = os.stat(config_file_path).st_mtime
+        except FileNotFoundError:
+            ctx.log.info('Removing script' + script_name)
+            scripts = list(ctx.options.scripts)
+            scripts.remove('rewrite.py')
+            ctx.options.update(scripts=scripts)
+            return
+        if last_mtime == 0:
+            last_mtime = mtime
+        if mtime > last_mtime:
+            last_mtime = mtime  # Don't need to repeat this steps
+            reload_addon()
+
+        await asyncio.sleep(ReloadInterval)
+
+
 class SingletonWatcher(object):
     """Singleton class for running watching
     task that reloads addon by the condition"""
@@ -41,28 +62,8 @@ class SingletonWatcher(object):
             cls.instance = super(SingletonWatcher, cls).__new__(cls)
         return cls.instance
 
-    async def watch(self, config_file_path):
-        """Method watches for some conditions, than calls addon reload"""
-        last_mtime = 0
-        while True:
-            try:
-                mtime = os.stat(config_file_path).st_mtime
-            except FileNotFoundError:
-                ctx.log.info('Removing script' + script_name)
-                scripts = list(ctx.options.scripts)
-                scripts.remove('rewrite.py')
-                ctx.options.update(scripts=scripts)
-                return
-            if last_mtime == 0:
-                last_mtime = mtime
-            if mtime > last_mtime:
-                last_mtime = mtime  # Don't need to repeat this steps
-                reload_addon()
-
-            await asyncio.sleep(ReloadInterval)
-
     def start(self, config_file_path):
-        self.task = asyncio.ensure_future(self.watch(config_file_path))
+        self.task = asyncio.ensure_future(watch(config_file_path))
 
     def stop(self):
         if self.task:
