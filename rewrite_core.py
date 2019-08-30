@@ -1,8 +1,8 @@
-'''
+"""
 Protobuf python sources are located at
 'mitmproxy/venv/lib/python3.6/site-packages/proto_py' path
 They are importes automatically by from proto_py import *
-'''
+"""
 
 import asyncio
 import os
@@ -26,15 +26,15 @@ ReloadInterval = 1
 
 
 def reload_addon() -> None:
-    '''Func reloads this addon'''
+    """Func reloads this addon"""
 
     addon = ctx.master.addons.get('scriptmanager:' + script_name)
     addon.loadscript()
 
 
 class SingletonWatcher(object):
-    '''Singleton class for running watching
-    task that reloads addon by the condition'''
+    """Singleton class for running watching
+    task that reloads addon by the condition"""
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):
@@ -42,7 +42,7 @@ class SingletonWatcher(object):
         return cls.instance
 
     async def watch(self, config_file_path):
-        '''Method watches for some conditions, than calls addon reload'''
+        """Method watches for some conditions, than calls addon reload"""
         last_mtime = 0
         while True:
             try:
@@ -73,7 +73,7 @@ class SingletonWatcher(object):
 
 
 class Rewriter:
-    '''Class for capturing and rewriting some requests and responses'''
+    """Class for capturing and rewriting some requests and responses"""
 
     def __init__(self, config_file_path: str, saving_dir: str,
                  rewriting_dir: str, api_rules_dir: str,
@@ -113,7 +113,7 @@ class Rewriter:
         ctx.log.info("Created new GUI")
 
     def done(self):
-        '''This method runs at the end of the addons life'''
+        """This method runs at the end of the addons life"""
         if self.gui is not None and self.gui.isAlive():
             self.gui.close()
             self.gui.join()
@@ -121,7 +121,7 @@ class Rewriter:
         ctx.log.info('Closing addon function. Stops all.')
 
     def save_api_map(self) -> None:
-        '''Method saves api map to files'''
+        """Method saves api map to files"""
 
         # Remove all files
         for the_file in listdir(self.api_rules_dir):
@@ -138,8 +138,8 @@ class Rewriter:
                 json.dump(api[0], api_file, indent=4)
 
     def find_api(self, flow: http.HTTPFlow) -> dict:
-        '''Method searches for API in config (api_map), that
-        is match to current request. Then returns this API as dictionary.'''
+        """Method searches for API in config (api_map), that
+        is match to current request. Then returns this API as dictionary."""
 
         url = urlparse(flow.request.pretty_url)
         url_authority = url.netloc.split(':', 1)[0]
@@ -167,14 +167,14 @@ class Rewriter:
         return None
 
     def save_config(self) -> None:
-        '''Method saves config with rules'''
+        """Method saves config with rules"""
 
         with open(self.config_file_path, 'w+') as config:
             json.dump(self.gui.config_json.config, config, indent=4)
 
     def find_rule(self, flow: http.HTTPFlow) -> dict:
-        '''Method searches for rule in config, that
-        is match to current request. Then returns this rule as a dictionary.'''
+        """Method searches for rule in config, that
+        is match to current request. Then returns this rule as a dictionary."""
 
         url = urlparse(flow.request.pretty_url)
         url_authority = url.netloc.split(':', 1)[0]
@@ -202,9 +202,9 @@ class Rewriter:
 # Needs to do something with async. Concurrent is a treat to overflow.
 #    @concurrent
     def request(self, flow: http.HTTPFlow) -> None:
-        '''Method calls when the full HTTP request has been read
+        """Method calls when the full HTTP request has been read
         It searches for the eligible rule in config
-        and then replaces request content according to it'''
+        and then replaces request content according to it"""
 
     #        rule = self.find_rule(flow)
     #        if rule is None:
@@ -219,9 +219,9 @@ class Rewriter:
         pass
 
     def response(self, flow: http.HTTPFlow) -> None:
-        '''Method calls when the full HTTP response has been read
+        """Method calls when the full HTTP response has been read
         It searches for the eligible rule in config
-        and then replaces response content according to it'''
+        and then replaces response content according to it"""
 
         rule = self.find_rule(flow)
         if rule is None:
