@@ -52,6 +52,8 @@ unset IFS; set +f
 
 cp ../init.py "$PYTHON_PROTO_PATH/__init__.py"
 
+set -
+
 cd ..
 git ls-files -z 'proto/' | xargs -0 git update-index --assume-unchanged
 git ls-files -z 'data/' | xargs -0 git update-index --assume-unchanged
