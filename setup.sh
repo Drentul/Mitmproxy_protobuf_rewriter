@@ -34,7 +34,12 @@ rm -rf "$PYTHON_PROTO_PATH"
 mkdir -p "$PYTHON_PROTO_PATH"
 
 IFS=$'\n'; set -f #This is needed for processing files and dirs with space ' ' symbol
-dirs=`find . -maxdepth 1 -mindepth 1 -type d`
+dirs=`find . -maxdepth 1 -mindepth 1 -type d -not -path './example'` #Exclude './example'
+
+if [[ -z "$dirs" ]] && [[ -d "./example" ]]; then
+  dirs='./example' #Adds './example' if no one another
+fi
+
 for dir in $dirs
 do
     for file in `find "$dir" -type f -name '*.proto'`
@@ -46,7 +51,6 @@ done
 unset IFS; set +f
 
 cp ../init.py "$PYTHON_PROTO_PATH/__init__.py"
-set -
 
 cd ..
 git ls-files -z 'proto/' | xargs -0 git update-index --assume-unchanged
