@@ -173,16 +173,16 @@ class ApiMapWindow(Window):
     def __init__(self, master, api_map):
         Window.__init__(self, master)
 
+        self.api_frame = Frame(self.window)
+        self.api_frame.pack(side=TOP)
+
         self.api_map = api_map
 
         self.api_list = []
 
         for api in self.api_map.config:  # Each 'api' is a tuple (json, string_file_name)
-            config = Config(api[0], button=Button(self.window), name=api[1])
+            config = Config(api[0], button=Button(self.api_frame), name=api[1])
             self.api_list.append(config)
-
-        for api in self.api_list:
-            api.button.pack(side=TOP)
 
         empty_frame = Frame(self.window, height=15)
         empty_frame.pack(side=TOP)
@@ -204,12 +204,14 @@ class ApiMapWindow(Window):
 
     def draw(self):
         """Places new texts and and new commands to buttons"""
-        # TODO: Сделать так, чтобы здесь кнопки пересоздавались и заново
-        # размещались. Т.к. их кол-во может поменяться.
+
+        for widget in self.api_frame.winfo_children():
+            widget.pack_forget()
         for api in self.api_list:
+            api.button.pack_forget()
             api.button["text"] = api.name
-            api.button["command"] = self.open_window(ModalWindow,
-                                                     api)
+            api.button["command"] = self.open_window(ModalWindow, api)
+            api.button.pack()
 
 
 class ConfigWindow(Window):
@@ -217,14 +219,16 @@ class ConfigWindow(Window):
     def __init__(self, master, config_json):
         Window.__init__(self, master)
 
+        self.configs_frame = Frame(self.window)
+        self.configs_frame.pack(side=TOP)
+
         self.config_json = config_json
         self.rule_list = []
 
         for rule in self.config_json.config:
-            button = Button(self.window)
+            button = Button(self.configs_frame)
             config = Config(rule, button)
             self.rule_list.append(config)
-            button.pack(side=TOP, fill=BOTH)
 
         buttons_frame = Frame(self.window)
         buttons_frame.pack(side=BOTTOM)
@@ -245,14 +249,16 @@ class ConfigWindow(Window):
 
     def draw(self):
         """Places new texts and and new commands to buttons"""
-        # TODO: Сделать так, чтобы здесь кнопки пересоздавались и заново
-        # размещались. Т.к. их кол-во может поменяться.
 
         # TODO: Посмотреть, нельзя ли таки объединить методы под общим соусом
+
+        for widget in self.configs_frame.winfo_children():
+            widget.pack_forget()
+
         for rule in self.rule_list:
             rule.button["text"] = rule.config.get('path_expr', '.*')
-            rule.button["command"] = self.open_window(ModalWindow,
-                                                      rule)
+            rule.button["command"] = self.open_window(ModalWindow, rule)
+            rule.button.pack(side=TOP, fill=BOTH)
 
 
 class ModalWindow(Window):
