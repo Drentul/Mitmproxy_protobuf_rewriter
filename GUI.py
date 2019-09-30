@@ -177,9 +177,8 @@ class ApiMapWindow(Window):
 
         self.api_list = []
 
-        for api in self.api_map.config:
-            config = Config(api, button=Button(self.window),
-                            name=api.get("file_path", "no_name"))
+        for api in self.api_map.config:  # Each 'api' is a tuple (json, string_file_name)
+            config = Config(api[0], button=Button(self.window), name=api[1])
             self.api_list.append(config)
 
         for api in self.api_list:
@@ -199,7 +198,7 @@ class ApiMapWindow(Window):
         """Saves new config to parent window then closes this"""
         api_map = []
         for api in self.api_list:
-            api_map.append(api.config)
+            api_map.append((api.config, api.name))
         self.new_value = api_map
         self.window.destroy()
 

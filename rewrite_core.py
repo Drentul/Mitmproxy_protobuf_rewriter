@@ -106,8 +106,6 @@ class Rewriter:
 
         self.saving_dir = saving_dir
 
-        # Такая структура нужна для возможности потом перезаписать файлы
-        # так как они использовалсь в качестве источников
         api_map = []  # list of tuples [(json, string_file_name), ..]
         api_files = [f for f in listdir(self.api_rules_dir) if
                      os.path.isfile(os.path.join(self.api_rules_dir, f))]
@@ -121,8 +119,8 @@ class Rewriter:
                         ctx.log.error(f'Cannot decode json config in {os.path.join(self.api_rules_dir, api_file)}'
                                       f', please check it.')
                         continue
-                    api_rule.update({"file_path": api_file})
-                    api_map.append(api_rule)
+                    #api_rule.update({"file_path": api_file})
+                    api_map.append((api_rule, api_file))
             except EnvironmentError:
                 # Unnecessary exception. We compile a list of files according to data from the system.
                 # They must exist
