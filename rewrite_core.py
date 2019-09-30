@@ -82,6 +82,8 @@ class Rewriter:
                  example_api_rules_dir: str):
 
         ctx.log.info('Creating addon object')
+        has_error_in_init = False
+
         if os.path.isfile(config_file_path):
             self.config_file_path = config_file_path
             self.rewriting_dir = rewriting_dir
@@ -91,15 +93,16 @@ class Rewriter:
             self.rewriting_dir = example_rewriting_dir
             self.api_rules_dir = example_api_rules_dir
 
-        with open(self.config_file_path) as config:
-            config_json = json.load(config)
-
-        if config_json is None:
-            ctx.log.error(f'Cannot load the addon {script_name}.' 
-                          f'Please check the file in {self.config_file_path}, then reload the proxy.')
-            addon = ctx.master.addons.get('scriptmanager:' + script_name)
-            ctx.master.addons.remove(addon)
-            return
+        try:
+            with open(self.config_file_path) as config:
+                try:
+                    config_json = json.load(config)
+                except json.JSONDecodeError:
+                    ctx.log.error(f'Cannot decode json config in {self.config_file_path}, please check it.')
+                    has_error_in_init = True
+        except EnvironmentError:
+            ctx.log.error(f'File {self.config_file_path} not found. It is needed to work with the addon.')
+            has_error_in_init = True
 
         self.saving_dir = saving_dir
 
@@ -109,13 +112,33 @@ class Rewriter:
         api_files = [f for f in listdir(self.api_rules_dir) if
                      os.path.isfile(os.path.join(self.api_rules_dir, f))]
         for api_file in api_files:
-            with open(os.path.join(self.api_rules_dir, api_file)) as json_api_rule:
-                api_rule = json.load(json_api_rule)
-                api_rule.update({"file_path": api_file})
-                api_map.append(api_rule)
+            try:
+                with open(os.path.join(self.api_rules_dir, api_file)) as json_api_rule:
+                    try:
+                        api_rule = json.load(json_api_rule)
+                    except json.JSONDecodeError:
+                        # Excluding invalid configs with error
+                        ctx.log.error(f'Cannot decode json config in {os.path.join(self.api_rules_dir, api_file)}'
+                                      f', please check it.')
+                        continue
+                    api_rule.update({"file_path": api_file})
+                    api_map.append(api_rule)
+            except EnvironmentError:
+                # Unnecessary exception. We compile a list of files according to data from the system.
+                # They must exist
+                ctx.log.error(f'File {os.path.join(self.api_rules_dir, api_file)} not found.'
+                              f' It is needed to work with the addon.')
+                has_error_in_init = True
 
         # singleton_watcher.start(self.config_file_path)  # Temporarily disabled
         # ctx.log.info('Created new reloading watcher')
+
+        if has_error_in_init:
+            ctx.log.error(f'Cannot load the addon {script_name}.'
+                          f' See the error above.')
+            addon = ctx.master.addons.get('scriptmanager:' + script_name)
+            ctx.master.addons.remove(addon)
+            return
 
         self.gui = GUI.GUI(config_json, api_map)
         ctx.log.info("Created new GUI")
