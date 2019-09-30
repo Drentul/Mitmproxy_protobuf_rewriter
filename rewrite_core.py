@@ -178,13 +178,13 @@ class Rewriter:
         method = flow.request.method
 
         for api in self.gui.api_map.config:
-            find_server = False  # Flag for searching
+            is_server_found = False  # Flag for searching
 
             for server in api.get('server'):
                 if re.match(server, url_authority):
-                    find_server = True
+                    is_server_found = True
 
-            if not find_server:
+            if not is_server_found:
                 continue
 
             rules = api.get('rules')
