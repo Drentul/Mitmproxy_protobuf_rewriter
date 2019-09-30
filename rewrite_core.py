@@ -94,6 +94,13 @@ class Rewriter:
         with open(self.config_file_path) as config:
             config_json = json.load(config)
 
+        if config_json is None:
+            ctx.log.error(f'Cannot load the addon {script_name}.' 
+                          f'Please check the file in {self.config_file_path}, then reload the proxy.')
+            addon = ctx.master.addons.get('scriptmanager:' + script_name)
+            ctx.master.addons.remove(addon)
+            return
+
         self.saving_dir = saving_dir
 
         # Такая структура нужна для возможности потом перезаписать файлы
