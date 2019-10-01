@@ -175,10 +175,12 @@ class Rewriter:
         url_path = url.path
         method = flow.request.method
 
-        for api in self.gui.api_map.config:
+        for api_and_name in self.gui.api_map.config:
             is_server_found = False  # Flag for searching
 
-            for server in api[0].get('server'):
+            api = api_and_name[0]
+
+            for server in api.get('server'):
                 if re.match(server, url_authority):
                     is_server_found = True
 
