@@ -178,7 +178,7 @@ class Rewriter:
         for api in self.gui.api_map.config:
             is_server_found = False  # Flag for searching
 
-            for server in api.get('server'):
+            for server in api[0].get('server'):
                 if re.match(server, url_authority):
                     is_server_found = True
 
