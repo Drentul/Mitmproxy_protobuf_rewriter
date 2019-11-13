@@ -167,7 +167,7 @@ class Rewriter:
             for rule in rules:
                 if (re.match('^/*' + rule.get('path', '.*') + '$', url_path) and
                         re.match(rule.get('method', '.*'), method)):
-                    return_rule = rule
+                    return_rule = rule.copy()
                     return_rule.update({"errors": api[0].get("errors")})
                     return return_rule
         return None
