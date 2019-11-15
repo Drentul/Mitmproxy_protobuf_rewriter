@@ -4,6 +4,7 @@ Graphical user interface based on Tkinter standard library
 
 import json
 import threading
+import GUI_widgets as GW
 from abc import ABCMeta, abstractmethod
 from tkinter import *
 from tkinter import messagebox
@@ -210,8 +211,46 @@ class ApiMapWindow(Window):
         for api in self.api_list:
             api.button.pack_forget()
             api.button["text"] = api.name
-            api.button["command"] = self.open_window(ModalWindow, api)
+            api.button["command"] = self.open_window(ApiSubwindow, api)
             api.button.pack()
+
+
+class ApiSubwindow(Window):
+    """Window for single API map file"""
+
+    def __init__(self, master, api_file):
+        Window.__init__(self, master)
+
+        self.api_frame = Frame(self.window)
+        self.api_frame.pack(side=TOP)
+
+        self.api_file = api_file
+
+        self.sections_list = []
+
+        for section in self.api_file.config.items():
+            self.sections_list.append((section[0], json.dumps(section[1], indent=4)))
+
+        self.e_list = GW.ExpandedList(self.api_frame, self.sections_list)
+
+        empty_frame = Frame(self.window, height=15)
+        empty_frame.pack(side=TOP)
+
+        buttons_frame = Frame(self.window)
+        buttons_frame.pack(side=BOTTOM)
+        Button(buttons_frame, text="Close",
+               command=self.close_childs_recursive).pack(side=RIGHT)
+        Button(buttons_frame, text="Save",
+               command=self.save_and_exit).pack(side=LEFT)
+
+    def save_and_exit(self):
+        """Saves new config to parent window then closes this"""
+        self.new_value = self.e_list.get()
+        self.window.destroy()
+
+    def draw(self):
+        """Places new texts and and new commands to buttons"""
+        pass
 
 
 class ConfigWindow(Window):
