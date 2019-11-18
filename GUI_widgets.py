@@ -61,3 +61,21 @@ class ExpandedList:
         for element in self.elements:
             new_dict[element.title] = element.text_field.get()
         return new_dict
+
+
+class DoubleButtonWithDelete(Frame):
+    def __init__(self, master, text='', command=None):
+        Frame.__init__(self, master)
+        self.text = text
+        self.command = command
+        self.main_btn = Button(self, text=self.text, command=self.command)
+        self.delete_button = Button(self, text=' - ', command=self.delete_this)
+
+    def pack(self, *args, **kwargs):
+        super().pack(*args, **kwargs)
+        self.main_btn.pack(side=LEFT, fill=BOTH)
+        self.delete_button.pack(side=LEFT, fill=BOTH)
+
+    def delete_this(self):
+        # Нужно сделать удаление себя и дернуть перерисовку
+        pass
