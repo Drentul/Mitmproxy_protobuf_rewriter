@@ -130,7 +130,10 @@ class GUI(threading.Thread, Window):
 
     def quit_dialog(self):
         """Opens dialog window for quit"""
-        if messagebox.askokcancel("Quit", "Do you want to save before quit?"):
+        mb = messagebox.askyesnocancel("Quit", "Do you want to save before quit?")
+        if mb is None:
+            return
+        if mb:
             self.addon.save_api_map()
             self.addon.save_config()
             self.close_childs_recursive()
