@@ -22,7 +22,7 @@ class ListElement:
         self.text_field.pi = self.text_field.pack_info()
         self.text_field.visible = True
         self.toggle()
-        self.text_field.update(text)
+        self.text_field.update(self.text)
 
     def pack(self):
         self.frame.pack(side=TOP, fill=BOTH, expand=YES)
