@@ -104,8 +104,9 @@ class Config:
 class GUI(threading.Thread, Window):
     """Main GUI window and a working thread"""
 
-    def __init__(self, config_json, api_map):
+    def __init__(self, addon, config_json, api_map):
         threading.Thread.__init__(self)
+        self.addon = addon
         self.window = None
         self.master = None
         self.subwindow = None
@@ -129,7 +130,11 @@ class GUI(threading.Thread, Window):
 
     def quit_dialog(self):
         """Opens dialog window for quit"""
-        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        if messagebox.askokcancel("Quit", "Do you want to save before quit?"):
+            self.addon.save_api_map()
+            self.addon.save_config()
+            self.close_childs_recursive()
+        else:
             self.close_childs_recursive()
 
     def run(self):
@@ -148,7 +153,7 @@ class GUI(threading.Thread, Window):
 
         self.draw()
 
-        exit_button = Button(self.window, text='Exit',
+        exit_button = Button(self.window, text='Save/Exit',
                              command=self.quit_dialog)
         exit_button.pack(side=BOTTOM)
 

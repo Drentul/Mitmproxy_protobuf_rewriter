@@ -138,7 +138,7 @@ class Rewriter:
             ctx.master.addons.remove(addon)
             return
 
-        self.gui = GUI.GUI(config_json, api_map)
+        self.gui = GUI.GUI(self, config_json, api_map)
         ctx.log.info("Created new GUI")
 
     def done(self):
