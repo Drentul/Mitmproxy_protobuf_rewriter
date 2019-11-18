@@ -74,8 +74,8 @@ class DoubleButtonWithDelete(Frame):
 
     def pack(self, *args, **kwargs):
         super().pack(*args, **kwargs)
-        self.main_btn.pack(side=LEFT, fill=BOTH)
-        self.delete_button.pack(side=LEFT, fill=BOTH)
+        self.main_btn.pack(side=LEFT, fill=BOTH, expand=True)
+        self.delete_button.pack(side=RIGHT)
 
     @property
     def text(self):

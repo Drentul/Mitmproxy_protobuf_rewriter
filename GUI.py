@@ -267,7 +267,7 @@ class ConfigWindow(Window):
         Window.__init__(self, master)
 
         self.configs_frame = Frame(self.window)
-        self.configs_frame.pack(side=TOP)
+        self.configs_frame.pack(side=TOP, fill=BOTH)
 
         self.config_json = config_json
         self.rule_list = []
