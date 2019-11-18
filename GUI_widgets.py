@@ -64,18 +64,42 @@ class ExpandedList:
 
 
 class DoubleButtonWithDelete(Frame):
-    def __init__(self, master, text='', command=None):
+    def __init__(self, master, text='', command=None, delete_command=None):
         Frame.__init__(self, master)
-        self.text = text
-        self.command = command
-        self.main_btn = Button(self, text=self.text, command=self.command)
-        self.delete_button = Button(self, text=' - ', command=self.delete_this)
+        self._text = text
+        self._command = command
+        self._delete_command = delete_command
+        self.main_btn = Button(self, text=self._text, command=self._command)
+        self.delete_button = Button(self, text=' - ', command=self._delete_command)
 
     def pack(self, *args, **kwargs):
         super().pack(*args, **kwargs)
         self.main_btn.pack(side=LEFT, fill=BOTH)
         self.delete_button.pack(side=LEFT, fill=BOTH)
 
-    def delete_this(self):
-        # Нужно сделать удаление себя и дернуть перерисовку
-        pass
+    @property
+    def text(self):
+        return self._text
+
+    @text.setter
+    def text(self, value):
+        self._text = value
+        self.main_btn['text'] = value
+
+    @property
+    def command(self):
+        return self._text
+
+    @command.setter
+    def command(self, value):
+        self._text = value
+        self.main_btn['command'] = value
+
+    @property
+    def delete_command(self):
+        return self._text
+
+    @delete_command.setter
+    def delete_command(self, value):
+        self._text = value
+        self.delete_button['command'] = value

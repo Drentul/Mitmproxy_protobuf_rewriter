@@ -273,7 +273,7 @@ class ConfigWindow(Window):
         self.rule_list = []
 
         for rule in self.config_json.config:
-            button = Button(self.configs_frame)
+            button = GW.DoubleButtonWithDelete(self.configs_frame)
             config = Config(rule, button)
             self.rule_list.append(config)
 
@@ -303,9 +303,20 @@ class ConfigWindow(Window):
             widget.pack_forget()
 
         for rule in self.rule_list:
-            rule.button["text"] = rule.config.get('path_expr', '.*')
-            rule.button["command"] = self.open_window(ModalWindow, rule)
+            rule.button.text = rule.config.get('path_expr', '.*')
+            rule.button.command = self.open_window(ModalWindow, rule)
+            rule.button.delete_command = self.button_delete(rule.button)
             rule.button.pack(side=TOP, fill=BOTH)
+
+    def button_delete(self, button):
+        # TODO: сделать безопаснее, т.к. удаление из листа в цикле плохая идея.
+        def wrapper(_button=button):
+            for config in self.rule_list:
+                if config.button == _button:
+                    self.rule_list.remove(config)
+                    break
+            self.draw()
+        return wrapper
 
 
 class ModalWindow(Window):
