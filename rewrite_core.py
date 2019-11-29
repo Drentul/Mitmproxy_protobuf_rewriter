@@ -70,7 +70,7 @@ class SingletonWatcher(object):
             self.task.cancel()
 
 
-# singleton_watcher = SingletonWatcher() # Temporarily disabled
+singleton_watcher = SingletonWatcher()
 
 
 class Rewriter:
@@ -96,7 +96,7 @@ class Rewriter:
         try:
             with open(self.config_file_path) as config:
                 try:
-                    config_json = json.load(config)
+                    self.config_json = json.load(config)
                 except json.JSONDecodeError:
                     ctx.log.error(f'Cannot decode json config in {self.config_file_path}, please check it.')
                     has_error_in_init = True
@@ -106,7 +106,7 @@ class Rewriter:
 
         self.saving_dir = saving_dir
 
-        api_map = []  # list of tuples [(json, string_file_name), ..]
+        self.api_map = []  # list of tuples [(json, string_file_name), ..]
         api_files = [f for f in listdir(self.api_rules_dir) if
                      os.path.isfile(os.path.join(self.api_rules_dir, f))]
         for api_file in api_files:
@@ -119,8 +119,7 @@ class Rewriter:
                         ctx.log.error(f'Cannot decode json config in {os.path.join(self.api_rules_dir, api_file)}'
                                       f', please check it.')
                         continue
-                    #api_rule.update({"file_path": api_file})
-                    api_map.append((api_rule, api_file))
+                    self.api_map.append((api_rule, api_file))
             except EnvironmentError:
                 # Unnecessary exception. We compile a list of files according to data from the system.
                 # They must exist
@@ -128,8 +127,8 @@ class Rewriter:
                               f' It is needed to work with the addon.')
                 has_error_in_init = True
 
-        # singleton_watcher.start(self.config_file_path)  # Temporarily disabled
-        # ctx.log.info('Created new reloading watcher')
+        singleton_watcher.start(self.config_file_path)  # Temporarily disabled
+        ctx.log.info('Created new reloading watcher')
 
         if has_error_in_init:
             ctx.log.error(f'Cannot load the addon {script_name}.'
@@ -138,15 +137,15 @@ class Rewriter:
             ctx.master.addons.remove(addon)
             return
 
-        self.gui = GUI.GUI(self, config_json, api_map)
-        ctx.log.info("Created new GUI")
+        #self.gui = GUI.GUI(self, self.config_json, self.api_map)
+        #ctx.log.info("Created new GUI")
 
     def done(self):
         """This method runs at the end of the addons life"""
-        if self.gui is not None and self.gui.isAlive():
-            self.gui.close()
-            self.gui.join()
-        # singleton_watcher.stop() # Temporarily disabled
+        #if self.gui is not None and self.gui.isAlive():
+        #    self.gui.close()
+        #    self.gui.join()
+        singleton_watcher.stop()
         ctx.log.info('Closing addon function. Stops all.')
 
     def save_api_map(self) -> None:
@@ -162,7 +161,7 @@ class Rewriter:
                 ctx.log.info(e)
 
         # Creating files and writes jsons to it
-        for api in self.gui.api_map.config:
+        for api in self.api_map:
             with open(os.path.join(self.api_rules_dir, api[1]), 'w+') as api_file:
                 json.dump(api[0], api_file, indent=4)
 
@@ -175,7 +174,7 @@ class Rewriter:
         url_path = url.path
         method = flow.request.method
 
-        for api_and_name in self.gui.api_map.config:
+        for api_and_name in self.api_map:
             is_server_found = False  # Flag for searching
 
             api = api_and_name[0]
@@ -201,7 +200,7 @@ class Rewriter:
         """Method saves config with rules"""
 
         with open(self.config_file_path, 'w+') as config:
-            json.dump(self.gui.config_json.config, config, indent=4)
+            json.dump(self.config_json, config, indent=4)
 
     def find_rule(self, flow: http.HTTPFlow) -> dict:
         """Method searches for rule in config, that
@@ -211,7 +210,7 @@ class Rewriter:
         url_authority = url.netloc.split(':', 1)[0]
         url_path = url.path
 
-        for rule in self.gui.config_json.config:
+        for rule in self.config_json:
             is_on = rule.get('is_on', True)
             is_match_authority = re.match(rule.get('authority_expr',
                                                    '.*'), url_authority)

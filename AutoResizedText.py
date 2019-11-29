@@ -17,7 +17,7 @@ import json
 class AutoResizedText(Frame):
     def __init__(self, master, width=0, height=0, family="Arial", size=15, *args, **kwargs):
         
-        Frame.__init__(self, master, width = width, height= height)
+        Frame.__init__(self, master, width=width, height=height)
         self.pack_propagate(False)
 
         self._min_width = width
@@ -28,7 +28,7 @@ class AutoResizedText(Frame):
         if family is None and size is None:
             self._font = tkfont.Font(family=family, size=size)
         else:
-            self._font = tkfont.Font(family=self._textarea.cget("font"))
+            self._font = tkfont.Font(font=self._textarea["font"])
 
         self._textarea.config(font=self._font)
         self._textarea.bind('<KeyRelease>', self.resize)
