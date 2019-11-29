@@ -8,11 +8,13 @@ import asyncio
 import json
 import os
 import re
+import time
 from os import listdir, unlink
 from urllib.parse import urlparse
 
 from mitmproxy import ctx
 from mitmproxy import http
+from mitmproxy.script import concurrent
 
 import GUI
 import helper
@@ -230,23 +232,21 @@ class Rewriter:
         return None
 
 # Needs to do something with async. Concurrent is a treat to overflow.
-#    @concurrent
+    @concurrent
     def request(self, flow: http.HTTPFlow) -> None:
         """Method calls when the full HTTP request has been read
         It searches for the eligible rule in config
         and then replaces request content according to it"""
 
-    #        rule = self.find_rule(flow)
-    #        if rule is None:
-    #            return
-    #
-    #        # Bad internet settings: delay, loss
-    #
-    #        delay = rule.get('delay', None)
-    #        if delay not in (None, ''):
-    #            time.sleep(delay)
+        rule = self.find_rule(flow)
+        if rule is None:
+            return
 
-        pass
+        # Bad internet settings: delay, loss
+
+        delay = rule.get('delay', None)
+        if delay not in (None, ''):
+            time.sleep(delay)
 
     def response(self, flow: http.HTTPFlow) -> None:
         """Method calls when the full HTTP response has been read
