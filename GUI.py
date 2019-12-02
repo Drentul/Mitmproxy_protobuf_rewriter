@@ -4,6 +4,7 @@ Graphical user interface based on Tkinter standard library
 
 import json
 import threading
+import GUI_widgets as GW
 from abc import ABCMeta, abstractmethod
 from tkinter import *
 from tkinter import messagebox
@@ -103,8 +104,9 @@ class Config:
 class GUI(threading.Thread, Window):
     """Main GUI window and a working thread"""
 
-    def __init__(self, config_json, api_map):
+    def __init__(self, addon, config_json, api_map):
         threading.Thread.__init__(self)
+        self.addon = addon
         self.window = None
         self.master = None
         self.subwindow = None
@@ -128,7 +130,14 @@ class GUI(threading.Thread, Window):
 
     def quit_dialog(self):
         """Opens dialog window for quit"""
-        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        mb = messagebox.askyesnocancel("Quit", "Do you want to save before quit?")
+        if mb is None:
+            return
+        if mb:
+            self.addon.save_api_map()
+            self.addon.save_config()
+            self.close_childs_recursive()
+        else:
             self.close_childs_recursive()
 
     def run(self):
@@ -147,7 +156,7 @@ class GUI(threading.Thread, Window):
 
         self.draw()
 
-        exit_button = Button(self.window, text='Exit',
+        exit_button = Button(self.window, text='Save/Exit',
                              command=self.quit_dialog)
         exit_button.pack(side=BOTTOM)
 
@@ -210,8 +219,46 @@ class ApiMapWindow(Window):
         for api in self.api_list:
             api.button.pack_forget()
             api.button["text"] = api.name
-            api.button["command"] = self.open_window(ModalWindow, api)
+            api.button["command"] = self.open_window(ApiSubwindow, api)
             api.button.pack()
+
+
+class ApiSubwindow(Window):
+    """Window for single API map file"""
+
+    def __init__(self, master, api_file):
+        Window.__init__(self, master)
+
+        self.api_frame = Frame(self.window)
+        self.api_frame.pack(side=TOP)
+
+        self.api_file = api_file
+
+        self.sections_list = []
+
+        for section in self.api_file.config.items():
+            self.sections_list.append((section[0], json.dumps(section[1], indent=4)))
+
+        self.e_list = GW.ExpandedList(self.api_frame, self.sections_list)
+
+        empty_frame = Frame(self.window, height=15)
+        empty_frame.pack(side=TOP)
+
+        buttons_frame = Frame(self.window)
+        buttons_frame.pack(side=BOTTOM)
+        Button(buttons_frame, text="Close",
+               command=self.close_childs_recursive).pack(side=RIGHT)
+        Button(buttons_frame, text="Save",
+               command=self.save_and_exit).pack(side=LEFT)
+
+    def save_and_exit(self):
+        """Saves new config to parent window then closes this"""
+        self.new_value = self.e_list.get()
+        self.window.destroy()
+
+    def draw(self):
+        """Places new texts and and new commands to buttons"""
+        pass
 
 
 class ConfigWindow(Window):
@@ -220,13 +267,13 @@ class ConfigWindow(Window):
         Window.__init__(self, master)
 
         self.configs_frame = Frame(self.window)
-        self.configs_frame.pack(side=TOP)
+        self.configs_frame.pack(side=TOP, fill=BOTH)
 
         self.config_json = config_json
         self.rule_list = []
 
         for rule in self.config_json.config:
-            button = Button(self.configs_frame)
+            button = GW.ButtonWithDelete(self.configs_frame)
             config = Config(rule, button)
             self.rule_list.append(config)
 
@@ -256,9 +303,20 @@ class ConfigWindow(Window):
             widget.pack_forget()
 
         for rule in self.rule_list:
-            rule.button["text"] = rule.config.get('path_expr', '.*')
-            rule.button["command"] = self.open_window(ModalWindow, rule)
+            rule.button.text = rule.config.get('path_expr', '.*')
+            rule.button.command = self.open_window(ModalWindow, rule)
+            rule.button.delete_command = self.button_delete(rule.button)
             rule.button.pack(side=TOP, fill=BOTH)
+
+    def button_delete(self, button):
+        # TODO: сделать безопаснее, т.к. удаление из листа в цикле плохая идея.
+        def wrapper(_button=button):
+            for config in self.rule_list:
+                if config.button == _button:
+                    self.rule_list.remove(config)
+                    break
+            self.draw()
+        return wrapper
 
 
 class ModalWindow(Window):
