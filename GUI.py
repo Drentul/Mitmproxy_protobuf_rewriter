@@ -273,7 +273,7 @@ class ConfigWindow(Window):
         self.rule_list = []
 
         for rule in self.config_json.config:
-            button = GW.DoubleButtonWithDelete(self.configs_frame)
+            button = GW.ButtonWithDelete(self.configs_frame)
             config = Config(rule, button)
             self.rule_list.append(config)
 

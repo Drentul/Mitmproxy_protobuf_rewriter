@@ -62,7 +62,7 @@ class AutoResizedText(Frame):
         return self._fit_to_size_of_text()
 
     def get(self, start="1.0", end=END):
-        return json.loads(self._textarea.get(start, end))
+        return self._textarea.get(start, end)
 
     def update(self, text):
         self._textarea.delete('1.0', 'end')

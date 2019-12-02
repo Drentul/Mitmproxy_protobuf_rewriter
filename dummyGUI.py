@@ -9,6 +9,7 @@ import GUI_widgets as GW
 from tkinter import *
 from tkinter import messagebox
 from tkinter import font
+from tkinter.scrolledtext import ScrolledText
 from conf import *
 
 
@@ -85,12 +86,13 @@ def compare_trees(node1, node2):
 
 
 class FrameLayout(Frame):
-    def __init__(self, master, window, node):
-        self.master = master
+    def __init__(self, window, node):
+        self.readme = ''
         self.window = window
+        self.master = self.window.content_frame
         self.node = node
         self.buttons = []
-        Frame.__init__(self, self.master, background='yellow')
+        Frame.__init__(self, self.master)
         self.buttons_frame = Frame(self)
         self.additional_frame = Frame(self)
 
@@ -104,8 +106,8 @@ class FrameLayout(Frame):
             btn.pack(padx=5)
 
     def pack_forget(self):
-        Frame.pack_forget(self)
         self.save_to_tree()
+        Frame.pack_forget(self)
         self.buttons_frame.pack_forget()
         self.additional_frame.pack_forget()
 
@@ -116,85 +118,72 @@ class FrameLayout(Frame):
                 nodes.append(btn.node)
         self.node.children = nodes
 
-    def button_delete(self, button):
-        def wrapper(_button=button):
-            self.buttons.remove(_button)
-            _button.pack_forget()
-        return wrapper
-
-    def button_add(self, button):
-        def wrapper(_button=button):
-            self.buttons.append(_button)
-            self.pack_forget()
-            self.pack()
-        return wrapper
+    def validate(self):
+        self.save_to_tree()
+        return True
 
     def create_node_and_command_for_button(self, button):
         button.node = None
 
 
 class RootFrame(FrameLayout):
-    def __init__(self, master, window, node):
-        FrameLayout.__init__(self, master, window, node)  # master = content_frame (черный)
+    def __init__(self, window, node):
+        FrameLayout.__init__(self, window, node)
 
+        try:
+            with open('data/readme/readme.md') as readme:
+                self.readme = readme.read()
+        except Exception:
+            pass
         self.buttons = []
 
         api_node = self.node.get_children('API map')
-        api_frame = APIFrame(self.master, self.window, api_node)
+        api_frame = APIFrame(self.window, api_node)
         api_btn = Button(self.buttons_frame, text=api_node.data,
                          command=self.window.insert_frame(api_frame),
                          font=self.window.buttons_font)
         api_btn.node = api_node
-        
+
         config_node = self.node.get_children('Config')
-        config_frame = ConfigFrame(self.master, self.window, config_node)
+        config_frame = ConfigFrame(self.window, config_node)
         config_btn = Button(self.buttons_frame, text=config_node.data,
                             command=self.window.insert_frame(config_frame),
                             font=self.window.buttons_font)
         config_btn.node = config_node
-        
+
         self.buttons.append(api_btn)
         self.buttons.append(config_btn)
 
 
 class MediumFrame(FrameLayout):
-    def __init__(self, master, window, node):
-        FrameLayout.__init__(self, master, window, node)
+    def __init__(self, window, node):
+        FrameLayout.__init__(self, window, node)
 
         self.buttons = []
-        for child in self.node.children:
-            btn = GW.DoubleButtonWithDelete(self.buttons_frame, text=child.data,
-                                            font=self.window.buttons_font)
-            frame = self.create_frame(child)
-            btn.command = self.window.insert_frame(frame)
-            btn.delete_command = self.button_delete(btn)
-            btn.node = child
-            self.buttons.append(btn)
-        self.triple_button = GW.TripleEntryWithTwoButtons(self.buttons_frame, font=self.window.buttons_font)
-        self.triple_button.node = None
-        self.triple_button.command = self.replace_by_double_button(self.triple_button, self.buttons_frame)
-        self.add_button = Button(self.additional_frame, text='+',
-                                 command=self.button_add(self.triple_button),
-                                 font=self.window.buttons_font)
+        self.content_list = [child.data for child in self.node.children]
 
-    def replace_by_double_button(self, btn, frame):
-        def wrapper(_btn=btn, _frame=frame):
-            text = _btn.text
-            pack_info = _btn.pack_info()
-            new_btn = GW.DoubleButtonWithDelete(_frame, text=text, font=self.window.buttons_font)
-            self.create_node_and_command_for_button(new_btn)
-            new_btn.delete_command = self.button_delete(new_btn)
-            _btn.text = ''
-            _btn.pack_forget()
-            new_btn.pack(pack_info)
-            self.buttons.append(new_btn)
-        return wrapper
+        self.list = GW.ListOfButtons(self.buttons_frame, self, self.node.data, self.content_list,
+                                     font=self.window.buttons_font)
+        self.buttons = self.list.buttons
+
+    def pack(self):
+        Frame.pack(self, expand=True, fill=X, padx=50)
+        self.buttons_frame.pack(expand=True, fill=X, padx=10, pady=10)
+        self.list.pack()
 
     def create_frame(self, node):
         return LeafFrame(node)
 
 
 class APIFrame(MediumFrame):
+    def __init__(self, window, node):
+        MediumFrame.__init__(self, window, node)
+        try:
+            with open('data/api_rules/readme/readme.md') as readme:
+                self.readme = readme.read()
+        except Exception:
+            pass
+
     def create_node_and_command_for_button(self, button):
         button.node = ConfigsTreeNode(button.text)
         button.node.children.append(ConfigsTreeNode({'server': [], 'errors': [], 'rules': []}))
@@ -202,37 +191,48 @@ class APIFrame(MediumFrame):
         button.command = self.window.insert_frame(frame)
 
     def create_frame(self, node):
-        return APILeaf(self.master, self.window, node)
+        return APILeaf(self.window, node)
 
 
 class ConfigFrame(MediumFrame):
+    def __init__(self, window, node):
+        MediumFrame.__init__(self, window, node)
+        try:
+            with open('data/readme/config_readme.md') as readme:
+                self.readme = readme.read()
+        except Exception:
+            pass
+
     def create_node_and_command_for_button(self, button):
         button.node = ConfigsTreeNode(button.text)
-        button.node.children.append(ConfigsTreeNode({'path_expr': button.text}))
+        button.node.children.append(ConfigsTreeNode({'is_on': True, 'authority_expr': '', 'path_expr': button.text,
+                                                     'method': ['GET'], 'status_code': '', 'save_content': '',
+                                                     'rewrite_content': '', 'headers': {}
+                                                     }))
         frame = self.create_frame(button.node)
         button.command = self.window.insert_frame(frame)
 
     def create_frame(self, node):
-        return ConfigLeaf(self.master, self.window, node)
+        return ConfigLeaf(self.window, node)
 
 
 class LeafFrame(FrameLayout):
-    def __init__(self, master, window, node):
-        FrameLayout.__init__(self, master, window, node)
+    def __init__(self, window, node):
+        FrameLayout.__init__(self, window, node)
 
 
 class APILeaf(LeafFrame):
-    def __init__(self, master, window, node):
-        FrameLayout.__init__(self, master, window, node)
+    def __init__(self, window, node):
+        FrameLayout.__init__(self, window, node)
+        try:
+            with open('data/api_rules/readme/one_file_readme.md') as readme:
+                self.readme = readme.read()
+        except Exception:
+            pass
 
         self.buttons = []
-
-        self.sections_list = []
         self.child = self.node.children[0]
-        api_config = self.child.data  # {'server':'', 'errors': '', 'rules': ''}
-        for key, value in api_config.items():
-            self.sections_list.append((key, json.dumps(value, indent=4)))
-        self.expanded_list = GW.ExpandedList(self.buttons_frame, self.sections_list,
+        self.expanded_list = GW.ExpandedList(self.buttons_frame, self.child.data,
                                              font=self.window.buttons_font)
 
         self.expanded_list.node = self.child
@@ -241,21 +241,33 @@ class APILeaf(LeafFrame):
     def save_to_tree(self):
         self.child.data = self.expanded_list.get()
 
+    def validate(self):
+        try:
+            self.save_to_tree()
+            return True
+        except Exception:
+            return False
+
 
 class ConfigLeaf(LeafFrame):
-    def __init__(self, master, window, node):
-        FrameLayout.__init__(self, master, window, node)
+    def __init__(self, window, node):
+        FrameLayout.__init__(self, window, node)
+        try:
+            with open('data/readme/one_config_readme.md') as readme:
+                self.readme = readme.read()
+        except Exception as e:
+            pass
 
         self.buttons = []
         self.child = self.node.children[0]
-        text = json.dumps(self.child.data, indent=4)
-        self.text_field = Text(self.buttons_frame,
-                               font=self.window.buttons_font)
-        self.text_field.insert(1.0, text)
-        self.buttons.append(self.text_field)
+        self.expanded_list = GW.SpecialList(self.buttons_frame, self.child.data,
+                                            font=self.window.buttons_font)
+
+        self.expanded_list.node = self.child
+        self.buttons.append(self.expanded_list)
 
     def save_to_tree(self):
-        self.child.data = json.loads(self.text_field.get(1.0, END))
+        self.child.data = self.expanded_list.get()
 
 
 class StackOfFrames:
@@ -286,15 +298,15 @@ class MainWindow:
         self.current_frame = None
 
         # Fonts
-        self.buttons_font = font.Font(font=("Arial", 18))
+        self.buttons_font = font.Font(font=("Arial", 14))
 
         # Frames
         self.center_frame = Frame(self.window)
-        self.content_frame = Frame(self.center_frame, borderwidth=5, background='black')
-        self.description_frame = Frame(self.center_frame, width=300, borderwidth=5, background='green')
-        self.buttons_panel = Frame(self.window, height=80, borderwidth=5, background='red')
-        self.left_buttons_panel = Frame(self.buttons_panel, background='magenta')
-        self.right_buttons_panel = Frame(self.buttons_panel, background='yellow')
+        self.content_frame = Frame(self.center_frame, borderwidth=5)
+        self.description_frame = Frame(self.center_frame, width=500, borderwidth=5)
+        self.buttons_panel = Frame(self.window, height=80, borderwidth=5)
+        self.left_buttons_panel = Frame(self.buttons_panel)
+        self.right_buttons_panel = Frame(self.buttons_panel)
 
         # Buttons
         self.back_button_image = PhotoImage(file='icons/icons8-go-back-64.png')
@@ -307,13 +319,13 @@ class MainWindow:
                                   font=self.buttons_font, command=self.reset_changes)
 
         # Frames
-        self.current_frame = RootFrame(self.content_frame, self, self.current_root)
-        self.description = Message(self.description_frame)
+        self.current_frame = RootFrame(self, self.current_root)
+        self.description = ScrolledText(self.description_frame, wrap=WORD)
 
         self.draw()
 
     def draw(self):
-        self.window.geometry('1024x768')
+        self.window.geometry('1280x768')
         self.window.minsize(600, 400)
 
         self.window.pack_propagate(False)
@@ -340,6 +352,11 @@ class MainWindow:
         self.undo_button.pack(side=RIGHT, padx=10)
 
         self.current_frame.pack()
+        self.description['state'] = NORMAL
+        self.description.delete(0.0, END)
+        self.description.insert(0.0, self.current_frame.readme)
+        self.description['state'] = DISABLED
+        self.description.pack(fill=BOTH, expand=True)
 
     def redraw(self):
         for widget in self.window.winfo_children():
@@ -350,7 +367,7 @@ class MainWindow:
         self.current_frame.pack_forget()
         self.stack_of_frames.clear()
         self.current_root = create_main_tree(self.api, self.config)
-        self.current_frame = RootFrame(self.content_frame, self, self.current_root)
+        self.current_frame = RootFrame(self, self.current_root)
         self.draw()
 
     def insert_frame(self, frame: Frame):
@@ -361,6 +378,7 @@ class MainWindow:
 
             self.current_frame = _frame
             self.redraw()
+
         return wrapper
 
     def delete_frame(self):
@@ -368,8 +386,8 @@ class MainWindow:
             self.current_frame.pack_forget()
             self.current_frame = self.stack_of_frames.pop()
             self.redraw()
-        except IndexError as e:
-            print(e)
+        except Exception:
+            error = messagebox.showerror("Error", "Проверьте правильность введенных данных")
 
     def quit_dialog(self):
         """Opens dialog window for quit"""
@@ -383,29 +401,17 @@ class MainWindow:
         else:
             self.window.destroy()
 
-    def del_btn(self, btn):
-        def wrapper(_btn=btn):
-            _btn.pack_forget()
-        return wrapper
-
-    def replace_by_double_button(self, btn, frame):
-        def wrapper(_btn=btn, _frame=frame):
-            text = _btn.text
-            pack_info = _btn.pack_info()
-            new_btn = GW.DoubleButtonWithDelete(_frame, text=text)
-            new_btn.delete_command = self.del_btn(new_btn)
-            _btn.pack_forget()
-            new_btn.pack(pack_info)
-        return wrapper
-
     def back(self):
         self.delete_frame()
 
     def save_all(self):
-        self.current_frame.save_to_tree()
-        self.save_api_map()
-        self.save_config()
-        self.api, self.config = load_configs()
+        try:
+            self.current_frame.save_to_tree()
+            self.save_api_map()
+            self.save_config()
+            self.api, self.config = load_configs()
+        except Exception:
+            error = messagebox.showerror("Error", "Проверьте правильность введенных данных")
 
     def save_api_map(self):
         # Remove all files
